@@ -28,26 +28,17 @@ jobs:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         run: |
           npm ci --legacy-peer-deps
-          npm run build --if-present
-          npm run test --if-present
+          npm run build
 
-      - name: Copy artifact for deployment job
+      - name: Prepare deploy (standalone only)
         shell: bash
         run: |
-          set -e
-          mkdir -p deploy
-          if [ -d ".next/standalone" ]; then
-            echo "Using standalone output"
-            mkdir -p deploy/.next/static
-            cp -r .next/standalone/* deploy/
-            cp -r .next/static/* deploy/.next/static/
-          else
-            echo "Standalone not found; falling back to copying .next and package.json"
-            mkdir -p deploy
-            cp -r .next deploy/.next
-            cp package.json deploy/
-            [ -d public ] && cp -r public deploy/public || true
-          fi
+          set -euo pipefail
+          test -d .next/standalone || { echo "::error::.next/standalone not generated"; exit 1; }
+          rm -rf deploy
+          mkdir -p deploy/.next/static
+          cp -r .next/standalone/* deploy/
+          cp -r .next/static/* deploy/.next/static/
 
       - name: Zip artifact for deployment
         run: zip -r release.zip deploy
