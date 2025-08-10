@@ -7,7 +7,7 @@ import { Camera, Heart, MessageCircle, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
 import { tags } from "@/lib/data"
-import { getTagColor, getTagLabel, renderContentWithHashtags } from "@/lib/utils"
+import { getTagColor, getTagLabel } from "@/lib/utils"
 import type { Post } from "@/lib/types"
 import { UserStatus } from "@/lib/constants"
 

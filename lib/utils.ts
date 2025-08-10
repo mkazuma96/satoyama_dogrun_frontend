@@ -140,3 +140,10 @@ export const getTagColor = (tagId: string): string => {
       return "bg-gray-100 text-gray-700"
   }
 }
+
+export const renderContentWithHashtags = (content: string): string => {
+  if (!content) return content
+  
+  const hashtagRegex = /#(\w+)/g
+  return content.replace(hashtagRegex, '<span class="text-blue-600 font-medium">$&</span>')
+}
