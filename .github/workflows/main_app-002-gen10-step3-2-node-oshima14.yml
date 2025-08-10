@@ -32,10 +32,22 @@ jobs:
           npm run test --if-present
 
       - name: Copy artifact for deployment job
+        shell: bash
         run: |
-          mkdir -p deploy/.next/static
-          cp -r .next/standalone/* deploy/
-          cp -r .next/static/* deploy/.next/static/
+          set -e
+          mkdir -p deploy
+          if [ -d ".next/standalone" ]; then
+            echo "Using standalone output"
+            mkdir -p deploy/.next/static
+            cp -r .next/standalone/* deploy/
+            cp -r .next/static/* deploy/.next/static/
+          else
+            echo "Standalone not found; falling back to copying .next and package.json"
+            mkdir -p deploy
+            cp -r .next deploy/.next
+            cp package.json deploy/
+            [ -d public ] && cp -r public deploy/public || true
+          fi
 
       - name: Zip artifact for deployment
         run: zip -r release.zip deploy
