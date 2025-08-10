@@ -27,26 +27,64 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         run: |
+          echo "=== Starting Build Process ==="
+          echo "Current directory: $(pwd)"
+          echo "Node version: $(node --version)"
+          echo "npm version: $(npm --version)"
+          
+          echo "=== Cleaning npm cache ==="
           npm cache clean --force
+          
+          echo "=== Removing existing files ==="
           rm -rf node_modules package-lock.json
+          
+          echo "=== Installing dependencies ==="
           npm install
+          
+          echo "=== Building application ==="
           npm run build
+          
+          echo "=== Build completed ==="
           
       - name: Debug Build Output
         run: |
           echo "=== Build Output Debug ==="
+          echo "Current directory: $(pwd)"
+          echo "=== .next folder contents ==="
           ls -la .next/
+          
+          echo "=== Checking standalone folder ==="
           if [ -d .next/standalone ]; then
-            echo "=== Standalone folder exists ==="
+            echo "✅ Standalone folder exists"
+            echo "=== Standalone folder contents ==="
             ls -la .next/standalone/
+            
+            echo "=== Checking server.js ==="
+            if [ -f .next/standalone/server.js ]; then
+              echo "✅ server.js exists"
+              ls -la .next/standalone/server.js
+            else
+              echo "❌ server.js NOT found"
+            fi
           else
-            echo "=== Standalone folder NOT found ==="
+            echo "❌ Standalone folder NOT found"
           fi
+          
+          echo "=== Checking server folder ==="
           if [ -d .next/server ]; then
-            echo "=== Server folder exists ==="
+            echo "✅ Server folder exists"
+            echo "=== Server folder contents ==="
             ls -la .next/server/
+            
+            echo "=== Checking font-manifest.json ==="
+            if [ -f .next/server/font-manifest.json ]; then
+              echo "✅ font-manifest.json exists"
+              ls -la .next/server/font-manifest.json
+            else
+              echo "❌ font-manifest.json NOT found"
+            fi
           else
-            echo "=== Server folder NOT found ==="
+            echo "❌ Server folder NOT found"
           fi
 
       - name: Prepare deploy (standalone only)
