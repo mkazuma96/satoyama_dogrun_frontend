@@ -39,8 +39,9 @@ jobs:
           test -f .next/server/font-manifest.json
 
           rm -rf deploy
+          mkdir -p deploy deploy/.next/static deploy/.next/server
+
           cp -r .next/standalone/* deploy/
-          mkdir -p deploy/.next
           cp -r .next/static deploy/.next/static
           cp -r .next/server deploy/.next/server
 
