@@ -21,14 +21,33 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '18.19.0'
 
       - name: Install & Build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         run: |
-          npm ci
+          npm cache clean --force
+          rm -rf node_modules package-lock.json
+          npm install
           npm run build
+          
+      - name: Debug Build Output
+        run: |
+          echo "=== Build Output Debug ==="
+          ls -la .next/
+          if [ -d .next/standalone ]; then
+            echo "=== Standalone folder exists ==="
+            ls -la .next/standalone/
+          else
+            echo "=== Standalone folder NOT found ==="
+          fi
+          if [ -d .next/server ]; then
+            echo "=== Server folder exists ==="
+            ls -la .next/server/
+          else
+            echo "=== Server folder NOT found ==="
+          fi
 
       - name: Prepare deploy (standalone only)
         shell: bash
