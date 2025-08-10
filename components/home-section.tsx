@@ -175,6 +175,19 @@ export function HomeSection({
                   ログイン
                 </Button>
               </div>
+              
+              {/* 管理者ログインボタン - 目立たないように配置 */}
+              <div className="mt-4 pt-2">
+                <Button
+                  type="button"
+                  onClick={() => window.open('/admin', '_blank')}
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 font-caption px-3 py-1"
+                >
+                  管理者ログイン
+                </Button>
+              </div>
             </div>
           )}
 

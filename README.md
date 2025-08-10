@@ -37,7 +37,7 @@ frontend/
 ### 1. 依存関係のインストール
 
 ```bash
-npm install --legacy-peer-deps
+npm install
 ```
 
 ### 2. 環境変数の設定
@@ -49,7 +49,7 @@ cp env.local.example .env.local
 `.env.local`ファイルを編集して、バックエンドAPIのURLを設定：
 
 ```
-NEXT_PUBLIC_API_URL=https://app-002-gen10-step3-2-py-oshima14.azurewebsites.net/
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
 ### 3. 開発サーバーの起動
@@ -59,6 +59,25 @@ npm run dev
 ```
 
 フロントエンドは `http://localhost:3000` で起動します。
+
+## 起動コマンド
+
+### 開発サーバー起動
+```bash
+cd satoyama_dogrun_frontend
+npm run dev
+```
+
+### 本番ビルド
+```bash
+npm run build
+npm run start
+```
+
+### 依存関係のインストール（初回のみ）
+```bash
+npm install
+```
 
 ## 開発ガイドライン
 
