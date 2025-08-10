@@ -34,11 +34,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -d .next/standalone || { echo "::error::.next/standalone not generated"; exit 1; }
+          test -f .next/standalone/server.js
+          test -d .next/static
+          test -f .next/server/font-manifest.json
+
           rm -rf deploy
-          mkdir -p deploy/.next/static
           cp -r .next/standalone/* deploy/
-          cp -r .next/static/* deploy/.next/static/
+          mkdir -p deploy/.next
+          cp -r .next/static deploy/.next/static
+          cp -r .next/server deploy/.next/server
+
 
       - name: Zip artifact for deployment
         run: zip -r release.zip deploy
