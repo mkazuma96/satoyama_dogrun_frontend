@@ -24,7 +24,6 @@ jobs:
           node-version: '22.x'
 
       - name: npm install, build, and test
-      # 環境変数を追加
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         run: |
@@ -32,15 +31,14 @@ jobs:
           npm run build --if-present
           npm run test --if-present
 
-      #2
-      - name:Copy artifact for deployment job
+      - name: Copy artifact for deployment job
         run: |
-          mkdir deploy
-          cp -r ./.next/standalone/. ./deploy
-          cp -r ./.next/static/. ./deploy/.next/static
+          mkdir -p deploy/.next/static
+          cp -r .next/standalone/* deploy/
+          cp -r .next/static/* deploy/.next/static/
 
       - name: Zip artifact for deployment
-        run: zip release.zip ./deploy -r #3
+        run: zip -r release.zip deploy
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
