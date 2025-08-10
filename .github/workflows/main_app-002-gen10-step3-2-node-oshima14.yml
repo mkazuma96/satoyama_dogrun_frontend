@@ -64,23 +64,6 @@ jobs:
           echo "=== .next folder contents ==="
           ls -la .next/
           
-          echo "=== Checking standalone folder ==="
-          if [ -d .next/standalone ]; then
-            echo "✅ Standalone folder exists"
-            echo "=== Standalone folder contents ==="
-            ls -la .next/standalone/
-            
-            echo "=== Checking server.js ==="
-            if [ -f .next/standalone/server.js ]; then
-              echo "✅ server.js exists"
-              ls -la .next/standalone/server.js
-            else
-              echo "❌ server.js NOT found"
-            fi
-          else
-            echo "❌ Standalone folder NOT found"
-          fi
-          
           echo "=== Checking server folder ==="
           if [ -d .next/server ]; then
             echo "✅ Server folder exists"
@@ -96,6 +79,15 @@ jobs:
             fi
           else
             echo "❌ Server folder NOT found"
+          fi
+          
+          echo "=== Checking static folder ==="
+          if [ -d .next/static ]; then
+            echo "✅ Static folder exists"
+            echo "=== Static folder contents ==="
+            ls -la .next/static/
+          else
+            echo "❌ Static folder NOT found"
           fi
 
       - name: Prepare deploy (standard output)
@@ -119,7 +111,6 @@ jobs:
           
           echo "=== Deploy folder contents ==="
           ls -la deploy/
-
 
       - name: Zip artifact
         run: |
