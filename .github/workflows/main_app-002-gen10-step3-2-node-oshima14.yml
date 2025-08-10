@@ -21,7 +21,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18.19.0'
+          node-version: '18.17.0'
 
       - name: Install & Build
         env:
@@ -31,6 +31,10 @@ jobs:
           echo "Current directory: $(pwd)"
           echo "Node version: $(node --version)"
           echo "npm version: $(npm --version)"
+          
+          echo "=== Setting npm version ==="
+          npm install -g npm@9.8.1
+          echo "New npm version: $(npm --version)"
           
           echo "=== Cleaning npm cache ==="
           npm cache clean --force
@@ -50,6 +54,13 @@ jobs:
         run: |
           echo "=== Build Output Debug ==="
           echo "Current directory: $(pwd)"
+          echo "=== Environment Info ==="
+          echo "Node version: $(node --version)"
+          echo "npm version: $(npm --version)"
+          echo "OS: $(uname -a)"
+          echo "Memory: $(free -h || echo 'Memory info not available')"
+          echo "Disk space: $(df -h .)"
+          
           echo "=== .next folder contents ==="
           ls -la .next/
           
