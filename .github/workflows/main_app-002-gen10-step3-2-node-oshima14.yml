@@ -103,10 +103,17 @@ jobs:
           cp -r .next deploy/
           cp -r public deploy/ 2>/dev/null || echo "No public folder found"
           cp package.json deploy/
+          cp package-lock.json deploy/ 2>/dev/null || echo "No package-lock.json found"
           
           echo "=== Installing production dependencies ==="
           cd deploy
-          npm ci --only=production
+          if [ -f package-lock.json ]; then
+            echo "Using npm ci for faster install"
+            npm ci --only=production
+          else
+            echo "Using npm install for production dependencies"
+            npm install --production
+          fi
           cd ..
           
           echo "=== Deploy folder contents ==="
