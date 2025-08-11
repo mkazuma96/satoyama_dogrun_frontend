@@ -3,7 +3,7 @@
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Shield, LogOut, Home, Users, Dog, FileText, Calendar, Settings } from "lucide-react"
+import { Shield, LogOut, Users, FileText, Calendar, Settings, ClipboardCheck, ArrowLeft, Clock } from "lucide-react"
 
 export default function AdminNavigation() {
   const { isAuthenticated, user, logout } = useAuth()
@@ -16,11 +16,11 @@ export default function AdminNavigation() {
   }
 
   const navigationItems = [
-    { name: "ダッシュボード", href: "/admin/dashboard", icon: Home },
+    { name: "利用申請管理", href: "/admin/applications", icon: ClipboardCheck },
     { name: "ユーザー管理", href: "/admin/users", icon: Users },
-    { name: "犬の管理", href: "/admin/dogs", icon: Dog },
     { name: "投稿管理", href: "/admin/posts", icon: FileText },
     { name: "イベント管理", href: "/admin/events", icon: Calendar },
+    { name: "営業時間管理", href: "/admin/business-hours", icon: Clock },
     { name: "設定", href: "/admin/settings", icon: Settings },
   ]
 
@@ -76,7 +76,7 @@ export default function AdminNavigation() {
               onClick={() => router.push("/")}
               className="w-full flex items-center justify-center space-x-2 border-gray-300 text-gray-700 hover:bg-gray-50"
             >
-              <Home className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" />
               <span>ユーザー側へ戻る</span>
             </Button>
             <Button

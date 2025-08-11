@@ -10,13 +10,12 @@ import {
   Filter, 
   Eye,
   MoreHorizontal,
-  CheckCircle,
-  XCircle,
   FileText,
   User,
   Calendar,
   MessageCircle,
-  Heart
+  Heart,
+  Trash2
 } from "lucide-react"
 
 // 仮の投稿データ
@@ -62,30 +61,113 @@ const mockPosts = [
   }
 ]
 
+// 仮のコメントデータ
+const mockComments = {
+  1: [
+    {
+      id: 1,
+      author: "佐藤 花子",
+      content: "素敵な投稿ですね！うちの子も同じような体験をしました。",
+      createdAt: "2024-03-20 15:00",
+      likes: 3
+    },
+    {
+      id: 2,
+      author: "鈴木 次郎",
+      content: "天気が良いとワンちゃんも楽しそうですね。",
+      createdAt: "2024-03-20 15:30",
+      likes: 1
+    },
+    {
+      id: 3,
+      author: "高橋 美咲",
+      content: "写真も素敵です！",
+      createdAt: "2024-03-20 16:00",
+      likes: 2
+    }
+  ],
+  2: [
+    {
+      id: 4,
+      author: "田中 太郎",
+      content: "おもちゃの購入、お疲れ様でした！",
+      createdAt: "2024-03-19 17:00",
+      likes: 1
+    },
+    {
+      id: 5,
+      author: "山田 健太",
+      content: "どのおもちゃを買われたんですか？",
+      createdAt: "2024-03-19 17:15",
+      likes: 0
+    }
+  ],
+  3: [
+    {
+      id: 6,
+      author: "田中 太郎",
+      content: "トレーニングの成果、素晴らしいですね！",
+      createdAt: "2024-03-18 11:00",
+      likes: 4
+    },
+    {
+      id: 7,
+      author: "佐藤 花子",
+      content: "どんなトレーニングをされたんですか？",
+      createdAt: "2024-03-18 11:30",
+      likes: 2
+    },
+    {
+      id: 8,
+      author: "高橋 美咲",
+      content: "参考になります！",
+      createdAt: "2024-03-18 12:00",
+      likes: 1
+    }
+  ]
+}
+
 export default function PostsManagement() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
   const [tagFilter, setTagFilter] = useState("all")
+  const [selectedPost, setSelectedPost] = useState<any>(null)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
 
   const filteredPosts = mockPosts.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          post.author.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === "all" || post.status === statusFilter
     const matchesTag = tagFilter === "all" || post.tags.includes(tagFilter)
-    return matchesSearch && matchesStatus && matchesTag
+    return matchesSearch && matchesTag
   })
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "approved":
-        return <Badge className="bg-green-100 text-green-800">承認済み</Badge>
-      case "pending":
-        return <Badge className="bg-yellow-100 text-yellow-800">承認待ち</Badge>
-      case "reported":
-        return <Badge className="bg-red-100 text-red-800">報告あり</Badge>
-      default:
-        return <Badge variant="secondary">不明</Badge>
+
+
+  const handleShowDetails = (post: any) => {
+    setSelectedPost(post)
+    setShowDetailsModal(true)
+  }
+
+  const handleCloseDetails = () => {
+    setShowDetailsModal(false)
+    setSelectedPost(null)
+  }
+
+  const handleDeletePost = (post: any) => {
+    if (confirm(`「${post.title}」を削除しますか？\nこの操作は取り消せません。`)) {
+      // 実際の実装では、APIを呼び出してデータベースから削除
+      console.log(`投稿「${post.title}」を削除しました`)
+      alert(`投稿「${post.title}」を削除しました`)
+      // 投稿一覧から削除（実際の実装では、APIレスポンス後に状態を更新）
+    }
+  }
+
+  const handleDeleteComment = (comment: any, post: any) => {
+    if (confirm(`コメント「${comment.content.substring(0, 30)}...」を削除しますか？\nこの操作は取り消せません。`)) {
+      // 実際の実装では、APIを呼び出してデータベースから削除
+      console.log(`コメント「${comment.content.substring(0, 30)}...」を削除しました`)
+      alert(`コメントを削除しました`)
+      // コメント一覧から削除（実際の実装では、APIレスポンス後に状態を更新）
     }
   }
 
@@ -119,16 +201,6 @@ export default function PostsManagement() {
               </div>
             </div>
             <div className="flex gap-2">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">すべてのステータス</option>
-                <option value="approved">承認済み</option>
-                <option value="pending">承認待ち</option>
-                <option value="reported">報告あり</option>
-              </select>
               <select
                 value={tagFilter}
                 onChange={(e) => setTagFilter(e.target.value)}
@@ -207,22 +279,23 @@ export default function PostsManagement() {
                   </div>
                   
                   <div className="flex items-center space-x-2 ml-4">
-                    <div className="text-right">
-                      {getStatusBadge(post.status)}
-                    </div>
                     <div className="flex flex-col space-y-2">
-                      {post.status === "pending" && (
-                        <>
-                          <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50">
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            承認
-                          </Button>
-                          <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50">
-                            <XCircle className="h-4 w-4 mr-1" />
-                            却下
-                          </Button>
-                        </>
-                      )}
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleShowDetails(post)}
+                        className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                      >
+                        詳細
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleDeletePost(post)}
+                        className="text-red-600 border-red-600 hover:bg-red-50"
+                      >
+                        削除
+                      </Button>
                       <Button size="sm" variant="ghost">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
@@ -234,6 +307,121 @@ export default function PostsManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* 投稿詳細モーダル */}
+      {showDetailsModal && selectedPost && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">投稿詳細情報</h2>
+              <button
+                onClick={handleCloseDetails}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* 投稿情報 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>投稿内容</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">タイトル</label>
+                      <p className="text-gray-900 text-lg font-medium">{selectedPost.title}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">内容</label>
+                      <p className="text-gray-900 whitespace-pre-wrap">{selectedPost.content}</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">投稿者</label>
+                        <p className="text-gray-900">{selectedPost.author}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">投稿日時</label>
+                        <p className="text-gray-900">{selectedPost.createdAt}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">いいね数</label>
+                        <p className="text-gray-900">{selectedPost.likes}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">タグ</label>
+                      <div className="flex items-center space-x-2 mt-1">
+                        {selectedPost.tags.map((tag: string, index: number) => (
+                          <Badge key={index} variant="outline">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* コメント一覧 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>コメント一覧 ({selectedPost.comments}件)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {mockComments[selectedPost.id as keyof typeof mockComments] ? (
+                      mockComments[selectedPost.id as keyof typeof mockComments].map((comment: any) => (
+                        <div key={comment.id} className="border-l-4 border-blue-200 pl-4 py-3 bg-gray-50 rounded-r-lg">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                                <User className="h-3 w-3 text-blue-600" />
+                              </div>
+                              <span className="font-medium text-gray-900">{comment.author}</span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-sm text-gray-500">
+                              <span>{comment.createdAt}</span>
+                              <span className="flex items-center">
+                                <Heart className="h-3 w-3 mr-1" />
+                                {comment.likes}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-start justify-between">
+                            <p className="text-gray-700 flex-1">{comment.content}</p>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handleDeleteComment(comment, selectedPost)}
+                              className="text-red-600 border-red-600 hover:bg-red-50 ml-2"
+                            >
+                              削除
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-gray-500 py-8">
+                        コメントはありません
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <Button onClick={handleCloseDetails} variant="outline">
+                閉じる
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
