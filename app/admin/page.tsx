@@ -31,14 +31,14 @@ export default function AdminLogin() {
         // ログイン成功
         console.log("Login successful")
         
-        // 少し待ってからダッシュボードにリダイレクト（チャンクロードエラーを防ぐ）
+        // 少し待ってから利用申請管理ページにリダイレクト（チャンクロードエラーを防ぐ）
         setTimeout(() => {
           try {
-            router.push("/admin/dashboard")
+            router.push("/admin/applications")
           } catch (navigationError) {
             console.error("Navigation error:", navigationError)
             // フォールバック: ページをリロード
-            window.location.href = "/admin/dashboard"
+            window.location.href = "/admin/applications"
           }
         }, 100)
       } else {
