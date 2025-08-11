@@ -96,22 +96,14 @@ export default function AdminSettings() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center md:ml-0 ml-20">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">システム設定</h1>
-          <p className="text-gray-600 mt-1">アプリケーションの各種設定を管理できます</p>
+          <p className="text-gray-600 mt-1">システム全体の設定と管理</p>
         </div>
-        <Button 
-          onClick={() => handleSave("全体")} 
-          disabled={isLoading}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          {isLoading ? (
-            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Save className="h-4 w-4 mr-2" />
-          )}
-          全体を保存
+        <Button className="bg-blue-600 hover:bg-blue-700">
+          <Save className="h-4 w-4 mr-2" />
+          設定を保存
         </Button>
       </div>
 

@@ -124,10 +124,10 @@ export default function NoticesManagement() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center md:ml-0 ml-20">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">お知らせ管理</h1>
-          <p className="text-gray-600 mt-1">お知らせの作成と管理</p>
+          <p className="text-gray-600 mt-1">ユーザー向けお知らせの作成・編集・管理</p>
         </div>
         <Button className="bg-blue-600 hover:bg-blue-700">
           <Plus className="h-4 w-4 mr-2" />

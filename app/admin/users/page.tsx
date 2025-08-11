@@ -89,7 +89,7 @@ export default function UsersManagement() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center md:ml-0 ml-20">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">ユーザー管理</h1>
           <p className="text-gray-600 mt-1">登録ユーザーの一覧と管理</p>

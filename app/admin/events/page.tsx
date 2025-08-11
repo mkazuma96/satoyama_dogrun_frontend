@@ -143,15 +143,12 @@ export default function EventsManagement() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center md:ml-0 ml-20">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">イベント管理</h1>
-          <p className="text-gray-600 mt-1">イベントの作成と管理</p>
+          <p className="text-gray-600 mt-1">ドッグランイベントの作成・編集・管理</p>
         </div>
-        <Button 
-          className="bg-blue-600 hover:bg-blue-700"
-          onClick={() => setShowCreateModal(true)}
-        >
+        <Button className="bg-blue-600 hover:bg-blue-700">
           <Plus className="h-4 w-4 mr-2" />
           新規イベント作成
         </Button>

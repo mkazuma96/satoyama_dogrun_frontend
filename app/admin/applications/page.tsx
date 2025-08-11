@@ -251,7 +251,7 @@ export default function ApplicationsManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-6">
+      <div className="mb-6 md:ml-0 ml-20">
         <h1 className="text-2xl font-bold text-gray-900">利用申請管理</h1>
         <p className="text-gray-600 mt-1">ドッグラン利用申請の承認・却下を行います</p>
       </div>

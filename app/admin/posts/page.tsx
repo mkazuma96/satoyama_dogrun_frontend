@@ -174,7 +174,7 @@ export default function PostsManagement() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center md:ml-0 ml-20">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">投稿管理</h1>
           <p className="text-gray-600 mt-1">ユーザー投稿の一覧と管理</p>

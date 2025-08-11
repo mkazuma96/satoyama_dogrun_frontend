@@ -16,7 +16,8 @@ export default function AdminLayout({
     <AuthProvider>
       <div className="min-h-screen bg-gray-50">
         <AdminNavigation />
-        <div className="ml-64 p-6">
+        {/* タブレット以上では左マージン、タブレット以下ではマージンなし */}
+        <div className="md:ml-64 p-4 md:p-6">
           {children}
         </div>
       </div>
