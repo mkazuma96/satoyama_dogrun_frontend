@@ -1,6 +1,6 @@
 "use client"
 
-import { Activity, Clock, Dog, Users } from "lucide-react"
+import { Activity, Clock, Dog, Users, MapPin, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -45,6 +45,34 @@ const dogBreeds = [
   "ジャーマン・シェパード・ドッグ",
   "秋田犬",
   "その他",
+]
+
+// 現在利用中のワンちゃんのモックデータ
+const currentDogs = [
+  {
+    id: 1,
+    breed: "柴犬",
+    vaccinationStatus: "ワクチン済",
+    characteristics: ["人懐っこい", "活発"],
+    timeSpent: "30分前から",
+    icon: "🐕"
+  },
+  {
+    id: 2,
+    breed: "ボーダーコリー",
+    vaccinationStatus: "ワクチン済",
+    characteristics: ["遊び好き", "賢い"],
+    timeSpent: "1時間前から",
+    icon: "🐕"
+  },
+  {
+    id: 3,
+    breed: "トイプードル",
+    vaccinationStatus: "ワクチン済",
+    characteristics: ["おとなしい", "甘えん坊"],
+    timeSpent: "15分前から",
+    icon: "🐕"
+  }
 ]
 
 interface HomeSectionProps {
@@ -156,46 +184,115 @@ export function HomeSection({
   })
 
   return (
-    <section id="home" className="relative w-full py-12 md:py-24 lg:py-32">
+    <section id="home" className="relative w-full">
       <div className="container px-4 md:px-6">
-        <div className="flex flex-col items-center justify-center space-y-4">
-          {userStatus === UserStatus.Initial && (
-            <div className="space-y-4 text-center">
-              <h1 className="text-4xl font-heading tracking-tighter sm:text-5xl md:text-6xl/tight">
-                愛犬と最高の思い出を
-              </h1>
-              <p className="max-w-[600px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
-                自然豊かなドッグランで、愛犬と一緒に心ゆくまで遊び、リフレッシュしませんか？
-              </p>
-              <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center">
-                <Button onClick={() => setUserStatus((UserStatus as any).RegistrationForm)}>
-                  新規利用申請
-                </Button>
-                <Button onClick={() => setUserStatus((UserStatus as any).LoginForm)} variant="outline">
-                  ログイン
-                </Button>
-              </div>
-              
-              {/* 管理者ログインボタン - 目立たないように配置 */}
-              <div className="mt-4 pt-2">
-                <Button
-                  type="button"
-                  onClick={() => window.open('/admin', '_blank')}
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 font-caption px-3 py-1"
-                >
-                  管理者ログイン
-                </Button>
-              </div>
+        <div className="flex flex-col space-y-4">
+          {/* 営業時間・入館情報 */}
+          <div className="bg-blue-900 text-white p-4 rounded-lg">
+            <div className="text-center">
+              <div className="text-lg font-bold">本日開館 | 9:00~17:00</div>
             </div>
+          </div>
+
+          {/* 現在の利用状況 */}
+          <Card className="border-gray-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Activity className="h-5 w-5 text-blue-900" />
+                  <span className="text-sm font-medium text-gray-700">現在の利用状況</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-blue-900">{currentDogs.length}匹</div>
+                  <div className="text-xs text-gray-500">最終更新: 5分前</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 現在利用中のワンちゃん */}
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Users className="h-5 w-5 text-blue-900" />
+              <h3 className="text-lg font-medium text-gray-900">現在利用中のワンちゃん</h3>
+            </div>
+            {currentDogs.map((dog) => (
+              <Card key={dog.id} className="border-gray-200">
+                <CardContent className="p-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-10 h-10 bg-yellow-200 rounded-full flex items-center justify-center text-lg">
+                      {dog.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {dog.breed}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-300">
+                          {dog.vaccinationStatus}
+                        </Badge>
+                        {dog.characteristics.map((char, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {char}
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="flex items-center space-x-1 text-sm text-gray-600">
+                        <Clock className="h-4 w-4" />
+                        <span>{dog.timeSpent}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* 利用申請が必要セクション - ログイン前のみ表示（ログインフォーム・利用申請フォーム表示中は非表示） */}
+          {userStatus !== (UserStatus as any).LoggedIn && 
+           userStatus !== (UserStatus as any).LoginForm && 
+           userStatus !== (UserStatus as any).ForgotPasswordForm && 
+           userStatus !== (UserStatus as any).ForgotPasswordSent &&
+           userStatus !== (UserStatus as any).RegistrationForm && (
+            <Card className="border-gray-200 bg-gray-50">
+              <CardContent className="p-6 text-center">
+                <h3 className="text-lg font-medium text-blue-900 mb-3">
+                  里山ドッグランのご利用には申請が必要です
+                </h3>
+                <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+                  安全で快適な環境を提供するため、初回利用時には簡単な申請と審査をお願いしております。
+                </p>
+                <div className="space-y-3">
+                  <Button 
+                    onClick={() => setUserStatus((UserStatus as any).RegistrationForm)}
+                    className="w-full bg-blue-900 hover:bg-blue-800 text-white"
+                  >
+                    利用申請をする
+                  </Button>
+                  <div className="flex space-x-3">
+                    <Button 
+                      onClick={() => setUserStatus((UserStatus as any).LoginForm)}
+                      variant="outline" 
+                      className="flex-1 border-blue-900 text-blue-900 hover:bg-blue-50"
+                    >
+                      ログイン
+                    </Button>
+                    <Button 
+                      onClick={() => window.open('/admin', '_blank')}
+                      variant="outline" 
+                      className="flex-1 border-gray-400 text-gray-600 hover:bg-gray-50"
+                    >
+                      管理者ログイン
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
+          {/* 利用申請フォーム */}
           {userStatus === (UserStatus as any).RegistrationForm && (
             <div className="space-y-6 mt-6">
-              <h2 className="text-lg font-heading mb-4" style={{ color: "rgb(0, 8, 148)" }}>
-                利用申請フォーム
-              </h2>
               <Card className="border-asics-blue-100">
                 <CardContent className="p-4">
                   <form onSubmit={onSubmit} className="space-y-4">
@@ -488,6 +585,7 @@ export function HomeSection({
             </div>
           )}
 
+          {/* その他の状態表示 */}
           {userStatus === (UserStatus as any).RegistrationPending && (
             <div className="space-y-4">
               <h2 className="text-lg font-heading mb-4" style={{ color: "rgb(0, 8, 148)" }}>
@@ -504,23 +602,21 @@ export function HomeSection({
 
           {userStatus === (UserStatus as any).LoggedIn && (
             <div className="space-y-4">
-              <h2 className="text-lg font-heading mb-4" style={{ color: "rgb(0, 8, 148)" }}>
-                ログイン中
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400 font-caption">
-                ドッグランアプリへようこそ！
-              </p>
               <Button onClick={handleLogout} className="w-full font-caption">
                 ログアウト
+              </Button>
+              <Button 
+                onClick={() => window.open('/admin', '_blank')}
+                variant="outline" 
+                className="w-full font-caption border-gray-400 text-gray-600 hover:bg-gray-50"
+              >
+                管理者ログイン
               </Button>
             </div>
           )}
 
           {userStatus === (UserStatus as any).LoginForm && (
             <div className="space-y-6 mt-6">
-              <h2 className="text-lg font-heading mb-4" style={{ color: "rgb(0, 8, 148)" }}>
-                ログイン
-              </h2>
               <Card className="border-asics-blue-100">
                 <CardContent className="p-4">
                   <form onSubmit={handleLoginSubmit} className="space-y-4">
