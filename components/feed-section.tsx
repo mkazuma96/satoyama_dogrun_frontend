@@ -147,7 +147,16 @@ export function FeedSection({
                   </Badge>
                 </div>
                 <p className="text-sm text-gray-800 mb-3 font-body whitespace-pre-wrap break-words">
-                  {renderContentWithHashtags(post.content)}
+                  {post.content.split(/(#\w+)/g).map((part, index) => {
+                    if (part.startsWith('#')) {
+                      return (
+                        <span key={index} className="text-blue-600 font-medium">
+                          {part}
+                        </span>
+                      )
+                    }
+                    return part
+                  })}
                 </p>
                 {post.image && (
                   <div className="w-full h-32 bg-gray-200 rounded-lg mb-3 flex items-center justify-center">
