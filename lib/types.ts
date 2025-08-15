@@ -12,18 +12,11 @@ export interface DogProfile {
 }
 
 export interface Event {
-  id: string
+  id: number
   title: string
-  event_date: string
-  start_time: string
-  end_time: string
-  description?: string
-  location?: string
-  capacity?: number
-  fee?: number
-  status?: string
-  created_at?: string
-  updated_at?: string
+  date: string
+  time: string
+  participants: number
 }
 
 export interface Comment {

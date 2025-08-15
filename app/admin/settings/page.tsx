@@ -1,587 +1,507 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import { 
   Settings, 
+  Building2, 
+  Bell, 
   Shield, 
-  FileText, 
-  Activity, 
-  Download, 
-  Trash2,
-  Eye,
-  EyeOff,
-  AlertTriangle,
-  CheckCircle
+  Database,
+  Save,
+  RefreshCw
 } from "lucide-react"
-import { useAuth } from "@/contexts/AuthContext"
-import { securityUtils } from "@/lib/security"
-import { logger, LogLevel } from "@/lib/logger"
-import { performanceMonitor } from "@/lib/performance"
-import { AccessControl } from "@/lib/security"
+import { useToast } from "@/hooks/use-toast"
 
 export default function AdminSettings() {
-  const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState("security")
+  const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(false)
   
+  // 基本設定
+  const [basicSettings, setBasicSettings] = useState({
+    facilityName: "里山ドッグラン",
+    facilityDescription: "自然豊かな里山で犬と一緒に楽しめるドッグラン",
+    contactEmail: "info@satoyama-dogrun.com",
+    contactPhone: "03-1234-5678",
+    address: "東京都○○区○○町1-2-3",
+    businessHours: "9:00-17:00",
+    maxCapacity: "50",
+    pricePerHour: "1000"
+  })
+
+  // 通知設定
+  const [notificationSettings, setNotificationSettings] = useState({
+    emailNotifications: true,
+    smsNotifications: false,
+    pushNotifications: true,
+    maintenanceAlerts: true,
+    userRegistrationAlerts: true,
+    eventReminders: true
+  })
+
   // セキュリティ設定
-  const [securityConfig, setSecurityConfig] = useState({
-    passwordMinLength: 8,
-    passwordRequireUppercase: true,
-    passwordRequireLowercase: true,
-    passwordRequireNumbers: true,
-    passwordRequireSpecialChars: true,
-    sessionTimeoutMinutes: 30,
-    maxLoginAttempts: 5,
-    lockoutDurationMinutes: 15,
+  const [securitySettings, setSecuritySettings] = useState({
+    requireEmailVerification: true,
+    requirePhoneVerification: false,
+    maxLoginAttempts: "5",
+    sessionTimeout: "24",
+    twoFactorAuth: false
   })
 
-  // ログ設定
-  const [logConfig, setLogConfig] = useState({
-    level: LogLevel.INFO,
-    maxEntries: 1000,
-    enableConsole: true,
-    enableStorage: true,
-    enableRemote: false,
-    remoteEndpoint: "",
+  // システム設定
+  const [systemSettings, setSystemSettings] = useState({
+    maintenanceMode: false,
+    debugMode: false,
+    autoBackup: true,
+    backupFrequency: "daily",
+    logRetention: "30"
   })
 
-  // パフォーマンス設定
-  const [performanceConfig, setPerformanceConfig] = useState({
-    enableMonitoring: true,
-    maxMetrics: 1000,
-    enableResourceMonitoring: true,
-    enableUserInteractionMonitoring: true,
-  })
-
-  // ログデータ
-  const [logs, setLogs] = useState<any[]>([])
-  const [performanceReport, setPerformanceReport] = useState<any>(null)
-  const [performanceWarnings, setPerformanceWarnings] = useState<string[]>([])
-
-  // アクセス権限チェック
-  if (!AccessControl.isAdmin(user)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-red-600 mb-4">アクセス拒否</h2>
-          <p className="text-gray-600 mb-4">
-            このページにアクセスするには管理者権限が必要です。
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  // 初期化
-  useEffect(() => {
-    loadLogs()
-    loadPerformanceReport()
-  }, [])
-
-  // ログの読み込み
-  const loadLogs = () => {
-    const storedLogs = logger.getStoredLogs()
-    setLogs(storedLogs.slice(-100)) // 最新100件
-  }
-
-  // パフォーマンスレポートの読み込み
-  const loadPerformanceReport = () => {
-    const report = performanceMonitor.generateReport()
-    setPerformanceReport(report)
-    
-    const warnings = performanceMonitor.checkPerformanceWarnings()
-    setPerformanceWarnings(warnings)
-  }
-
-  // セキュリティ設定の保存
-  const saveSecurityConfig = () => {
-    // 実際の実装では、APIを通じて設定を保存
-    console.log('Security config saved:', securityConfig)
-    alert('セキュリティ設定を保存しました')
-  }
-
-  // ログ設定の保存
-  const saveLogConfig = () => {
-    logger.updateConfig(logConfig)
-    alert('ログ設定を保存しました')
-  }
-
-  // パフォーマンス設定の保存
-  const savePerformanceConfig = () => {
-    // 実際の実装では、APIを通じて設定を保存
-    console.log('Performance config saved:', performanceConfig)
-    alert('パフォーマンス設定を保存しました')
-  }
-
-  // ログのクリア
-  const clearLogs = () => {
-    if (confirm('すべてのログを削除しますか？この操作は取り消せません。')) {
-      logger.clearStoredLogs()
-      loadLogs()
-      alert('ログをクリアしました')
+  const handleSave = async (section: string) => {
+    setIsLoading(true)
+    try {
+      // ここでAPIを呼び出して設定を保存
+      await new Promise(resolve => setTimeout(resolve, 1000)) // 模擬的な遅延
+      
+      toast({
+        title: "設定を保存しました",
+        description: `${section}の設定が正常に保存されました。`,
+      })
+    } catch (error) {
+      toast({
+        title: "エラーが発生しました",
+        description: "設定の保存に失敗しました。もう一度お試しください。",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  // ログのエクスポート
-  const exportLogs = () => {
-    const logData = logger.exportLogs()
-    const blob = new Blob([logData], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `satoyama-logs-${new Date().toISOString().split('T')[0]}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  // パフォーマンスメトリクスのクリア
-  const clearPerformanceMetrics = () => {
-    if (confirm('パフォーマンスメトリクスをクリアしますか？')) {
-      performanceMonitor.clearMetrics()
-      loadPerformanceReport()
-      alert('パフォーマンスメトリクスをクリアしました')
-    }
-  }
-
-  // パフォーマンスメトリクスのエクスポート
-  const exportPerformanceMetrics = () => {
-    const metricsData = performanceMonitor.exportMetrics()
-    const blob = new Blob([metricsData], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `satoyama-performance-${new Date().toISOString().split('T')[0]}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+  const handleReset = (section: string) => {
+    toast({
+      title: "設定をリセットしました",
+      description: `${section}の設定がデフォルト値に戻されました。`,
+    })
   }
 
   return (
     <div className="space-y-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">システム設定</h1>
-        <p className="text-gray-600 mt-1">セキュリティ、ログ、パフォーマンスの設定を行います</p>
+      {/* Page Header */}
+      <div className="flex justify-between items-center md:ml-0 ml-20">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">システム設定</h1>
+          <p className="text-gray-600 mt-1">システム全体の設定と管理</p>
+        </div>
+        <Button className="bg-blue-600 hover:bg-blue-700">
+          <Save className="h-4 w-4 mr-2" />
+          設定を保存
+        </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="security" className="flex items-center space-x-2">
-            <Shield className="h-4 w-4" />
-            <span>セキュリティ</span>
-          </TabsTrigger>
-          <TabsTrigger value="logs" className="flex items-center space-x-2">
-            <FileText className="h-4 w-4" />
-            <span>ログ管理</span>
-          </TabsTrigger>
-          <TabsTrigger value="performance" className="flex items-center space-x-2">
-            <Activity className="h-4 w-4" />
-            <span>パフォーマンス</span>
-          </TabsTrigger>
+      <Tabs defaultValue="basic" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="basic">基本設定</TabsTrigger>
+          <TabsTrigger value="notifications">通知設定</TabsTrigger>
+          <TabsTrigger value="security">セキュリティ</TabsTrigger>
+          <TabsTrigger value="system">システム</TabsTrigger>
         </TabsList>
 
-        {/* セキュリティ設定タブ */}
-        <TabsContent value="security" className="space-y-6">
+        {/* 基本設定 */}
+        <TabsContent value="basic" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Shield className="h-5 w-5" />
-                <span>パスワードポリシー</span>
+              <CardTitle className="flex items-center">
+                <Building2 className="h-5 w-5 mr-2" />
+                施設情報
               </CardTitle>
-              <CardDescription>
-                パスワードの強度要件を設定します
-              </CardDescription>
+              <CardDescription>ドッグランの基本情報を設定します</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="passwordMinLength">最小文字数</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="facilityName">施設名</Label>
                   <Input
-                    id="passwordMinLength"
+                    id="facilityName"
+                    value={basicSettings.facilityName}
+                    onChange={(e) => setBasicSettings(prev => ({ ...prev, facilityName: e.target.value }))}
+                    placeholder="施設名を入力"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxCapacity">最大収容数</Label>
+                  <Input
+                    id="maxCapacity"
                     type="number"
-                    value={securityConfig.passwordMinLength}
-                    onChange={(e) => setSecurityConfig({
-                      ...securityConfig,
-                      passwordMinLength: parseInt(e.target.value)
-                    })}
-                    min="6"
-                    max="20"
+                    value={basicSettings.maxCapacity}
+                    onChange={(e) => setBasicSettings(prev => ({ ...prev, maxCapacity: e.target.value }))}
+                    placeholder="50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pricePerHour">1時間あたりの料金</Label>
+                  <Input
+                    id="pricePerHour"
+                    type="number"
+                    value={basicSettings.pricePerHour}
+                    onChange={(e) => setBasicSettings(prev => ({ ...prev, pricePerHour: e.target.value }))}
+                    placeholder="1000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="businessHours">営業時間</Label>
+                  <Input
+                    id="businessHours"
+                    value={basicSettings.businessHours}
+                    onChange={(e) => setBasicSettings(prev => ({ ...prev, businessHours: e.target.value }))}
+                    placeholder="9:00-17:00"
                   />
                 </div>
               </div>
               
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="requireUppercase">大文字を含む</Label>
-                  <Switch
-                    id="requireUppercase"
-                    checked={securityConfig.passwordRequireUppercase}
-                    onCheckedChange={(checked) => setSecurityConfig({
-                      ...securityConfig,
-                      passwordRequireUppercase: checked
-                    })}
+              <div className="space-y-2">
+                <Label htmlFor="facilityDescription">施設説明</Label>
+                <Textarea
+                  id="facilityDescription"
+                  value={basicSettings.facilityDescription}
+                  onChange={(e) => setBasicSettings(prev => ({ ...prev, facilityDescription: e.target.value }))}
+                  placeholder="施設の特徴や魅力を説明"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">連絡先メール</Label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    value={basicSettings.contactEmail}
+                    onChange={(e) => setBasicSettings(prev => ({ ...prev, contactEmail: e.target.value }))}
+                    placeholder="info@example.com"
                   />
                 </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="requireLowercase">小文字を含む</Label>
-                  <Switch
-                    id="requireLowercase"
-                    checked={securityConfig.passwordRequireLowercase}
-                    onCheckedChange={(checked) => setSecurityConfig({
-                      ...securityConfig,
-                      passwordRequireLowercase: checked
-                    })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="requireNumbers">数字を含む</Label>
-                  <Switch
-                    id="requireNumbers"
-                    checked={securityConfig.passwordRequireNumbers}
-                    onCheckedChange={(checked) => setSecurityConfig({
-                      ...securityConfig,
-                      passwordRequireNumbers: checked
-                    })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="requireSpecialChars">特殊文字を含む</Label>
-                  <Switch
-                    id="requireSpecialChars"
-                    checked={securityConfig.passwordRequireSpecialChars}
-                    onCheckedChange={(checked) => setSecurityConfig({
-                      ...securityConfig,
-                      passwordRequireSpecialChars: checked
-                    })}
+                <div className="space-y-2">
+                  <Label htmlFor="contactPhone">連絡先電話番号</Label>
+                  <Input
+                    id="contactPhone"
+                    value={basicSettings.contactPhone}
+                    onChange={(e) => setBasicSettings(prev => ({ ...prev, contactPhone: e.target.value }))}
+                    placeholder="03-1234-5678"
                   />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">住所</Label>
+                <Input
+                  id="address"
+                  value={basicSettings.address}
+                  onChange={(e) => setBasicSettings(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder="施設の住所を入力"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => handleReset("基本設定")}>
+                  リセット
+                </Button>
+                <Button onClick={() => handleSave("基本設定")} disabled={isLoading}>
+                  {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  保存
+                </Button>
+              </div>
             </CardContent>
           </Card>
+        </TabsContent>
 
+        {/* 通知設定 */}
+        <TabsContent value="notifications" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>セッション管理</CardTitle>
-              <CardDescription>
-                セッションの有効期限とログイン試行制限を設定します
-              </CardDescription>
+              <CardTitle className="flex items-center">
+                <Bell className="h-5 w-5 mr-2" />
+                通知設定
+              </CardTitle>
+              <CardDescription>各種通知の有効/無効を設定します</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="sessionTimeout">セッションタイムアウト（分）</Label>
-                  <Input
-                    id="sessionTimeout"
-                    type="number"
-                    value={securityConfig.sessionTimeoutMinutes}
-                    onChange={(e) => setSecurityConfig({
-                      ...securityConfig,
-                      sessionTimeoutMinutes: parseInt(e.target.value)
-                    })}
-                    min="15"
-                    max="480"
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>メール通知</Label>
+                    <p className="text-sm text-muted-foreground">重要な情報をメールで通知</p>
+                  </div>
+                  <Switch
+                    checked={notificationSettings.emailNotifications}
+                    onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, emailNotifications: checked }))}
                   />
                 </div>
                 
-                <div>
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>SMS通知</Label>
+                    <p className="text-sm text-muted-foreground">緊急時のみSMSで通知</p>
+                  </div>
+                  <Switch
+                    checked={notificationSettings.smsNotifications}
+                    onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, smsNotifications: checked }))}
+                  />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>プッシュ通知</Label>
+                    <p className="text-sm text-muted-foreground">アプリ内でプッシュ通知</p>
+                  </div>
+                  <Switch
+                    checked={notificationSettings.pushNotifications}
+                    onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, pushNotifications: checked }))}
+                  />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>メンテナンス通知</Label>
+                    <p className="text-sm text-muted-foreground">システムメンテナンスの通知</p>
+                  </div>
+                  <Switch
+                    checked={notificationSettings.maintenanceAlerts}
+                    onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, maintenanceAlerts: checked }))}
+                  />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>ユーザー登録通知</Label>
+                    <p className="text-sm text-muted-foreground">新規ユーザー登録の通知</p>
+                  </div>
+                  <Switch
+                    checked={notificationSettings.userRegistrationAlerts}
+                    onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, userRegistrationAlerts: checked }))}
+                  />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>イベントリマインダー</Label>
+                    <p className="text-sm text-muted-foreground">イベント前のリマインダー通知</p>
+                  </div>
+                  <Switch
+                    checked={notificationSettings.eventReminders}
+                    onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, eventReminders: checked }))}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => handleReset("通知設定")}>
+                  リセット
+                </Button>
+                <Button onClick={() => handleSave("通知設定")} disabled={isLoading}>
+                  {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  保存
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* セキュリティ設定 */}
+        <TabsContent value="security" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Shield className="h-5 w-5 mr-2" />
+                セキュリティ設定
+              </CardTitle>
+              <CardDescription>アカウントとセキュリティの設定</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>メール認証必須</Label>
+                    <p className="text-sm text-muted-foreground">ユーザー登録時にメール認証を必須にする</p>
+                  </div>
+                  <Switch
+                    checked={securitySettings.requireEmailVerification}
+                    onCheckedChange={(checked) => setSecuritySettings(prev => ({ ...prev, requireEmailVerification: checked }))}
+                  />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>電話認証必須</Label>
+                    <p className="text-sm text-muted-foreground">ユーザー登録時に電話認証を必須にする</p>
+                  </div>
+                  <Switch
+                    checked={securitySettings.requirePhoneVerification}
+                    onCheckedChange={(checked) => setSecuritySettings(prev => ({ ...prev, requirePhoneVerification: checked }))}
+                  />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>二要素認証</Label>
+                    <p className="text-sm text-muted-foreground">管理者アカウントに二要素認証を有効にする</p>
+                  </div>
+                  <Switch
+                    checked={securitySettings.twoFactorAuth}
+                    onCheckedChange={(checked) => setSecuritySettings(prev => ({ ...prev, twoFactorAuth: checked }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="maxLoginAttempts">最大ログイン試行回数</Label>
                   <Input
                     id="maxLoginAttempts"
                     type="number"
-                    value={securityConfig.maxLoginAttempts}
-                    onChange={(e) => setSecurityConfig({
-                      ...securityConfig,
-                      maxLoginAttempts: parseInt(e.target.value)
-                    })}
-                    min="3"
-                    max="10"
+                    value={securitySettings.maxLoginAttempts}
+                    onChange={(e) => setSecuritySettings(prev => ({ ...prev, maxLoginAttempts: e.target.value }))}
+                    placeholder="5"
                   />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-end">
-            <Button onClick={saveSecurityConfig} className="bg-blue-600 hover:bg-blue-700">
-              セキュリティ設定を保存
-            </Button>
-          </div>
-        </TabsContent>
-
-        {/* ログ管理タブ */}
-        <TabsContent value="logs" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>ログ設定</CardTitle>
-              <CardDescription>
-                ログの出力レベルと保存設定を管理します
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="logLevel">ログレベル</Label>
-                  <select
-                    id="logLevel"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    value={logConfig.level}
-                    onChange={(e) => setLogConfig({
-                      ...logConfig,
-                      level: parseInt(e.target.value)
-                    })}
-                  >
-                    <option value={LogLevel.DEBUG}>DEBUG</option>
-                    <option value={LogLevel.INFO}>INFO</option>
-                    <option value={LogLevel.WARN}>WARN</option>
-                    <option value={LogLevel.ERROR}>ERROR</option>
-                    <option value={LogLevel.FATAL}>FATAL</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="maxEntries">最大ログエントリ数</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="sessionTimeout">セッションタイムアウト（時間）</Label>
                   <Input
-                    id="maxEntries"
+                    id="sessionTimeout"
                     type="number"
-                    value={logConfig.maxEntries}
-                    onChange={(e) => setLogConfig({
-                      ...logConfig,
-                      maxEntries: parseInt(e.target.value)
-                    })}
-                    min="100"
-                    max="10000"
+                    value={securitySettings.sessionTimeout}
+                    onChange={(e) => setSecuritySettings(prev => ({ ...prev, sessionTimeout: e.target.value }))}
+                    placeholder="24"
                   />
                 </div>
               </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="enableConsole">コンソールログ</Label>
-                  <Switch
-                    id="enableConsole"
-                    checked={logConfig.enableConsole}
-                    onCheckedChange={(checked) => setLogConfig({
-                      ...logConfig,
-                      enableConsole: checked
-                    })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="enableStorage">ローカルストレージログ</Label>
-                  <Switch
-                    id="enableStorage"
-                    checked={logConfig.enableStorage}
-                    onCheckedChange={(checked) => setLogConfig({
-                      ...logConfig,
-                      enableStorage: checked
-                    })}
-                  />
-                </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => handleReset("セキュリティ設定")}>
+                  リセット
+                </Button>
+                <Button onClick={() => handleSave("セキュリティ設定")} disabled={isLoading}>
+                  {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  保存
+                </Button>
               </div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>ログ管理</CardTitle>
-              <CardDescription>
-                ログの表示、エクスポート、クリアを行います
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex space-x-2">
-                <Button onClick={loadLogs} variant="outline">
-                  ログを更新
-                </Button>
-                <Button onClick={exportLogs} variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  エクスポート
-                </Button>
-                <Button onClick={clearLogs} variant="outline" className="text-red-600">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  クリア
-                </Button>
-              </div>
-              
-              <div className="max-h-96 overflow-y-auto">
-                {logs.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">ログがありません</p>
-                ) : (
-                  <div className="space-y-2">
-                    {logs.map((log, index) => (
-                      <div key={index} className="p-3 bg-gray-50 rounded border text-sm">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium">{log.message}</span>
-                          <Badge variant={log.level >= LogLevel.ERROR ? "destructive" : "secondary"}>
-                            {log.level === LogLevel.DEBUG && "DEBUG"}
-                            {log.level === LogLevel.INFO && "INFO"}
-                            {log.level === LogLevel.WARN && "WARN"}
-                            {log.level === LogLevel.ERROR && "ERROR"}
-                            {log.level === LogLevel.FATAL && "FATAL"}
-                          </Badge>
-                        </div>
-                        <div className="text-gray-600 text-xs">
-                          {new Date(log.timestamp).toLocaleString()}
-                          {log.userId && ` | User: ${log.userId}`}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-end">
-            <Button onClick={saveLogConfig} className="bg-blue-600 hover:bg-blue-700">
-              ログ設定を保存
-            </Button>
-          </div>
         </TabsContent>
 
-        {/* パフォーマンスタブ */}
-        <TabsContent value="performance" className="space-y-6">
+        {/* システム設定 */}
+        <TabsContent value="system" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>パフォーマンス監視設定</CardTitle>
-              <CardDescription>
-                パフォーマンス監視の有効化と設定を行います
-              </CardDescription>
+              <CardTitle className="flex items-center">
+                <Database className="h-5 w-5 mr-2" />
+                システム設定
+              </CardTitle>
+              <CardDescription>システムの動作に関する設定</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="enableMonitoring">パフォーマンス監視</Label>
+                  <div className="space-y-0.5">
+                    <Label>メンテナンスモード</Label>
+                    <p className="text-sm text-muted-foreground">システムをメンテナンスモードにする</p>
+                  </div>
                   <Switch
-                    id="enableMonitoring"
-                    checked={performanceConfig.enableMonitoring}
-                    onCheckedChange={(checked) => setPerformanceConfig({
-                      ...performanceConfig,
-                      enableMonitoring: checked
-                    })}
+                    checked={systemSettings.maintenanceMode}
+                    onCheckedChange={(checked) => setSystemSettings(prev => ({ ...prev, maintenanceMode: checked }))}
                   />
                 </div>
                 
+                <Separator />
+                
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="enableResourceMonitoring">リソース監視</Label>
+                  <div className="space-y-0.5">
+                    <Label>デバッグモード</Label>
+                    <p className="text-sm text-muted-foreground">開発者向けのデバッグ情報を表示</p>
+                  </div>
                   <Switch
-                    id="enableResourceMonitoring"
-                    checked={performanceConfig.enableResourceMonitoring}
-                    onCheckedChange={(checked) => setPerformanceConfig({
-                      ...performanceConfig,
-                      enableResourceMonitoring: checked
-                    })}
+                    checked={systemSettings.debugMode}
+                    onCheckedChange={(checked) => setSystemSettings(prev => ({ ...prev, debugMode: checked }))}
                   />
                 </div>
                 
+                <Separator />
+                
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="enableUserInteractionMonitoring">ユーザー操作監視</Label>
+                  <div className="space-y-0.5">
+                    <Label>自動バックアップ</Label>
+                    <p className="text-sm text-muted-foreground">データベースの自動バックアップを有効にする</p>
+                  </div>
                   <Switch
-                    id="enableUserInteractionMonitoring"
-                    checked={performanceConfig.enableUserInteractionMonitoring}
-                    onCheckedChange={(checked) => setPerformanceConfig({
-                      ...performanceConfig,
-                      enableUserInteractionMonitoring: checked
-                    })}
+                    checked={systemSettings.autoBackup}
+                    onCheckedChange={(checked) => setSystemSettings(prev => ({ ...prev, autoBackup: checked }))}
                   />
                 </div>
               </div>
-              
-              <div>
-                <Label htmlFor="maxMetrics">最大メトリクス数</Label>
-                <Input
-                  id="maxMetrics"
-                  type="number"
-                  value={performanceConfig.maxMetrics}
-                  onChange={(e) => setPerformanceConfig({
-                    ...performanceConfig,
-                    maxMetrics: parseInt(e.target.value)
-                  })}
-                  min="100"
-                  max="10000"
-                />
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>パフォーマンスレポート</CardTitle>
-              <CardDescription>
-                現在のパフォーマンス状況を確認します
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {performanceWarnings.length > 0 && (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <h4 className="font-medium text-yellow-800 mb-2">パフォーマンス警告</h4>
-                  <ul className="text-sm text-yellow-700 space-y-1">
-                    {performanceWarnings.map((warning, index) => (
-                      <li key={index} className="flex items-center space-x-2">
-                        <AlertTriangle className="h-4 w-4" />
-                        <span>{warning}</span>
-                      </li>
-                    ))}
-                  </ul>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="backupFrequency">バックアップ頻度</Label>
+                  <Select
+                    value={systemSettings.backupFrequency}
+                    onValueChange={(value) => setSystemSettings(prev => ({ ...prev, backupFrequency: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="バックアップ頻度を選択" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hourly">毎時</SelectItem>
+                      <SelectItem value="daily">毎日</SelectItem>
+                      <SelectItem value="weekly">毎週</SelectItem>
+                      <SelectItem value="monthly">毎月</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
-              
-              {performanceReport && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 bg-blue-50 rounded-md text-center">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {performanceReport.summary.averagePageLoad}
-                    </div>
-                    <div className="text-sm text-blue-700">平均ページ読み込み時間 (ms)</div>
-                  </div>
-                  
-                  <div className="p-4 bg-green-50 rounded-md text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {performanceReport.summary.averageApiResponse}
-                    </div>
-                    <div className="text-sm text-green-700">平均API応答時間 (ms)</div>
-                  </div>
-                  
-                  <div className="p-4 bg-purple-50 rounded-md text-center">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {performanceReport.summary.totalMetrics}
-                    </div>
-                    <div className="text-sm text-purple-700">総メトリクス数</div>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="logRetention">ログ保持期間（日）</Label>
+                  <Input
+                    id="logRetention"
+                    type="number"
+                    value={systemSettings.logRetention}
+                    onChange={(e) => setSystemSettings(prev => ({ ...prev, logRetention: e.target.value }))}
+                    placeholder="30"
+                  />
                 </div>
-              )}
-              
-              <div className="flex space-x-2">
-                <Button onClick={loadPerformanceReport} variant="outline">
-                  レポートを更新
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => handleReset("システム設定")}>
+                  リセット
                 </Button>
-                <Button onClick={exportPerformanceMetrics} variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  メトリクスをエクスポート
-                </Button>
-                <Button onClick={clearPerformanceMetrics} variant="outline" className="text-red-600">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  メトリクスをクリア
+                <Button onClick={() => handleSave("システム設定")} disabled={isLoading}>
+                  {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  保存
                 </Button>
               </div>
             </CardContent>
           </Card>
-
-          <div className="flex justify-end">
-            <Button onClick={savePerformanceConfig} className="bg-blue-600 hover:bg-blue-700">
-              パフォーマンス設定を保存
-            </Button>
-          </div>
         </TabsContent>
       </Tabs>
     </div>

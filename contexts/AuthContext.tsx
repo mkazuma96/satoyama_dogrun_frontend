@@ -1,7 +1,6 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
-import { apiClient } from "../lib/api"
 
 interface AuthContextType {
   isAuthenticated: boolean
@@ -29,26 +28,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // 管理者認証用APIクライアントを使用
-      const response = await apiClient.admin.login({
-        email,
-        password
-      });
-      
-      const { access_token, admin_user } = response;
-      
-      // ローカルストレージに保存
-      try {
-        localStorage.setItem("admin_token", access_token)
-        localStorage.setItem("admin_user", JSON.stringify(admin_user))
-      } catch (storageError) {
-        console.error("Storage error:", storageError)
-        // ストレージエラーが発生しても認証は成功とする
+      // デモ用の簡単な認証（実際の実装ではAPI呼び出し）
+      if (email === "admin@satoyama-dogrun.com" && password === "admin2025!") {
+        const userData = { email, role: "admin" }
+        const token = "demo_token_" + Date.now()
+        
+        // ローカルストレージに保存
+        try {
+          localStorage.setItem("admin_token", token)
+          localStorage.setItem("admin_user", JSON.stringify(userData))
+        } catch (storageError) {
+          console.error("Storage error:", storageError)
+          // ストレージエラーが発生しても認証は成功とする
+        }
+        
+        setIsAuthenticated(true)
+        setUser(userData)
+        return true
       }
-      
-      setIsAuthenticated(true)
-      setUser(admin_user)
-      return true
+      return false
     } catch (error) {
       console.error("Login error:", error)
       return false

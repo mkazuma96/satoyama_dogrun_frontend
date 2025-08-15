@@ -196,12 +196,12 @@ export function EventsSection({
                     {event.title}
                   </h3>
                   <div className="flex items-center space-x-4 text-xs text-gray-500 font-caption mb-2">
-                    <span>{event.event_date}</span>
-                    <span>{event.start_time} - {event.end_time}</span>
+                    <span>{event.date}</span>
+                    <span>{event.time}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Users className="h-4 w-4 text-gray-400" />
-                    <span className="text-xs text-gray-600 font-caption">{event.capacity ? `${event.capacity}人定員` : '定員未定'}</span>
+                    <span className="text-xs text-gray-600 font-caption">{event.participants}人参加予定</span>
                   </div>
                 </div>
                 {/* ログインしていない場合は参加ボタンを非表示にするか、ログインを促す */}

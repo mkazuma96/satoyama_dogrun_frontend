@@ -22,9 +22,8 @@ const mockEvents = [
     id: 1,
     title: "春のドッグランフェス",
     description: "春の訪れを祝って、愛犬と一緒に楽しい時間を過ごしましょう。各種イベントやプレゼントもあります。",
-    event_date: "2024-04-15",
-    start_time: "10:00",
-    end_time: "16:00",
+    date: "2024-04-15",
+    time: "10:00-16:00",
     location: "里山ドッグラン",
     maxParticipants: 50,
     currentParticipants: 32,
@@ -34,9 +33,8 @@ const mockEvents = [
     id: 2,
     title: "犬のしつけ教室",
     description: "プロのトレーナーによる犬のしつけ教室です。基本的なコマンドから応用まで学べます。",
-    event_date: "2024-03-25",
-    start_time: "14:00",
-    end_time: "16:00",
+    date: "2024-03-25",
+    time: "14:00-16:00",
     location: "里山サロン",
     maxParticipants: 20,
     currentParticipants: 18,
@@ -46,9 +44,8 @@ const mockEvents = [
     id: 3,
     title: "夏の水遊び大会",
     description: "暑い夏を涼しく過ごそう！愛犬と一緒に水遊びを楽しむイベントです。",
-    event_date: "2024-07-20",
-    start_time: "13:00",
-    end_time: "17:00",
+    date: "2024-07-20",
+    time: "13:00-17:00",
     location: "里山ドッグラン",
     maxParticipants: 30,
     currentParticipants: 0,
@@ -65,9 +62,8 @@ export default function EventsManagement() {
     name: "",
     venue: "里山ドッグラン",
     maxParticipants: 20,
-    event_date: "",
-    start_time: "",
-    end_time: "",
+    date: "",
+    time: "",
     description: "",
     isFree: true,
     price: ""
@@ -101,9 +97,8 @@ export default function EventsManagement() {
       id: Date.now(), // 一時的なID生成
       title: newEvent.name,
       description: newEvent.description,
-      event_date: newEvent.event_date,
-      start_time: newEvent.start_time,
-      end_time: newEvent.end_time,
+      date: newEvent.date,
+      time: newEvent.time,
       location: newEvent.venue,
       maxParticipants: newEvent.maxParticipants,
       currentParticipants: 0,
@@ -200,7 +195,7 @@ export default function EventsManagement() {
               <div className="space-y-2 text-sm">
                 <div className="flex items-center text-gray-600">
                   <Calendar className="h-4 w-4 mr-2" />
-                  {event.event_date} {event.start_time} - {event.end_time}
+                  {event.date} {event.time}
                 </div>
                 <div className="flex items-center text-gray-600">
                   <MapPin className="h-4 w-4 mr-2" />
@@ -285,20 +280,11 @@ export default function EventsManagement() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">開始時間</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">開催時間</label>
                   <Input
-                    type="time"
-                    value={newEvent.start_time}
-                    onChange={(e) => setNewEvent({ ...newEvent, start_time: e.target.value })}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">終了時間</label>
-                  <Input
-                    type="time"
-                    value={newEvent.end_time}
-                    onChange={(e) => setNewEvent({ ...newEvent, end_time: e.target.value })}
+                    placeholder="例: 10:00-12:00"
+                    value={newEvent.time}
+                    onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
                   />
                 </div>
                 
@@ -331,8 +317,8 @@ export default function EventsManagement() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">開催日</label>
                   <Input
                     type="date"
-                    value={newEvent.event_date}
-                    onChange={(e) => setNewEvent({ ...newEvent, event_date: e.target.value })}
+                    value={newEvent.date}
+                    onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
                   />
                 </div>
 

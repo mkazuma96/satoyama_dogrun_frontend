@@ -3,7 +3,7 @@ import type { DogProfile, Event, Post, Notice, Tag, OwnerProfile, Comment } from
 
 // API設定
 const API_CONFIG = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  baseURL: process.env. || 'http://localhost:8000',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -15,47 +15,12 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     public message: string,
-    public data?: any,
-    public retryable: boolean = false
+    public data?: any
   ) {
     super(message);
     this.name = 'ApiError';
   }
 }
-
-// エラーハンドリング用のユーティリティ
-export const isRetryableError = (error: any): boolean => {
-  if (error instanceof ApiError) {
-    return error.retryable;
-  }
-  
-  // ネットワークエラーや5xxエラーはリトライ可能
-  if (error.code === 'NETWORK_ERROR' || error.code === 'ECONNRESET') {
-    return true;
-  }
-  
-  if (error.response?.status >= 500 && error.response?.status < 600) {
-    return true;
-  }
-  
-  return false;
-};
-
-export const getErrorMessage = (error: any): string => {
-  if (error instanceof ApiError) {
-    return error.message;
-  }
-  
-  if (error.response?.data?.detail) {
-    return error.response.data.detail;
-  }
-  
-  if (error.message) {
-    return error.message;
-  }
-  
-  return '予期しないエラーが発生しました';
-};
 
 // Axiosインスタンスの作成
 const createApiInstance = (): AxiosInstance => {
@@ -65,18 +30,13 @@ const createApiInstance = (): AxiosInstance => {
   instance.interceptors.request.use(
     (config) => {
       // トークンの自動追加
-      const token = localStorage.getItem('access_token') || localStorage.getItem('admin_token');
+      const token = localStorage.getItem('access_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-      
-      // リクエストIDの追加（ログ用）
-      config.headers['X-Request-ID'] = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
       return config;
     },
     (error) => {
-      console.error('Request interceptor error:', error);
       return Promise.reject(error);
     }
   );
@@ -84,52 +44,15 @@ const createApiInstance = (): AxiosInstance => {
   // レスポンスインターセプター
   instance.interceptors.response.use(
     (response: AxiosResponse) => {
-      // 成功レスポンスのログ
-      console.log(`API Success: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
-        status: response.status,
-        requestId: response.config.headers['X-Request-ID']
-      });
       return response;
     },
-    async (error: AxiosError) => {
-      const requestId = error.config?.headers['X-Request-ID'];
-      
+    (error: AxiosError) => {
       if (error.response) {
         const { status, data } = error.response;
         const errorMessage = (data as any)?.detail || 'APIエラーが発生しました';
-        
-        // エラーログ
-        console.error(`API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
-          status,
-          message: errorMessage,
-          requestId,
-          data
-        });
-        
-        // 認証エラーの場合はトークンをクリア
-        if (status === 401) {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('admin_token');
-          localStorage.removeItem('admin_user');
-          
-          // 管理者ページの場合はログインページにリダイレクト
-          if (window.location.pathname.startsWith('/admin')) {
-            window.location.href = '/admin';
-          }
-        }
-        
-        const retryable = status >= 500 && status < 600;
-        throw new ApiError(status, errorMessage, data, retryable);
+        throw new ApiError(status, errorMessage, data);
       }
-      
-      // ネットワークエラー
-      console.error('Network Error:', {
-        message: error.message,
-        requestId,
-        config: error.config
-      });
-      
-      throw new ApiError(0, 'ネットワークエラーが発生しました', null, true);
+      throw new ApiError(0, 'ネットワークエラーが発生しました');
     }
   );
 
@@ -425,118 +348,6 @@ export const apiClient = {
     } catch (error) {
       throw error;
     }
-  },
-
-  // 管理者用API
-  admin: {
-    // 管理者認証
-    login: async (data: { email: string; password: string }): Promise<ApiResponse<{ access_token: string; token_type: string; admin_user: any }>> => {
-      try {
-        const response = await api.post('/admin/auth/login', data);
-        const { access_token } = response.data;
-        localStorage.setItem('admin_token', access_token);
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
-    },
-
-    // ダッシュボード統計
-    getDashboardStats: async (): Promise<ApiResponse<any>> => {
-      try {
-        const response = await api.get('/admin/dashboard/stats');
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
-    },
-
-    // ユーザー管理
-    getUsers: async (): Promise<ApiResponse<any[]>> => {
-      try {
-        const response = await api.get('/admin/users');
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
-    },
-
-    // 犬の管理
-    getDogs: async (): Promise<ApiResponse<any[]>> => {
-      try {
-        const response = await api.get('/admin/dogs');
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
-    },
-
-    // 投稿管理
-    getPosts: async (): Promise<ApiResponse<any[]>> => {
-      try {
-        const response = await api.get('/admin/posts');
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
-    },
-
-    // イベント管理
-    getEvents: async (): Promise<ApiResponse<any[]>> => {
-      try {
-        const response = await api.get('/admin/events');
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
-    },
-
-    // 申請管理
-    getApplications: async (status?: string): Promise<ApiResponse<any[]>> => {
-      try {
-        const params = status ? { status } : {};
-        const response = await api.get('/admin/applications', { params });
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
-    },
-
-    getApplication: async (applicationId: string): Promise<ApiResponse<any>> => {
-      try {
-        const response = await api.get(`/admin/applications/${applicationId}`);
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
-    },
-
-    approveApplication: async (applicationId: string, data: { admin_notes?: string }): Promise<ApiResponse<any>> => {
-      try {
-        const response = await api.put(`/admin/applications/${applicationId}/approve`, data);
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
-    },
-
-    rejectApplication: async (applicationId: string, data: { admin_notes?: string, rejection_reason?: string }): Promise<ApiResponse<any>> => {
-      try {
-        const response = await api.put(`/admin/applications/${applicationId}/reject`, data);
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
-    },
-
-    getApplicationStats: async (): Promise<ApiResponse<any>> => {
-      try {
-        const response = await api.get('/admin/applications/stats');
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
-    },
   },
 };
 
