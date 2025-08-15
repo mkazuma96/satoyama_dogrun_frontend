@@ -3,7 +3,7 @@ import type { DogProfile, Event, Post, Notice, Tag, OwnerProfile, Comment } from
 
 // API設定
 const API_CONFIG = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  baseURL: (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, ''), // 末尾のスラッシュを削除
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
