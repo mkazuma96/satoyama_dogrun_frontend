@@ -21,7 +21,8 @@ export default function AdminLogin() {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/auth/login`, {
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '')
+      const response = await fetch(`${apiUrl}/admin/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -54,7 +55,8 @@ export default function AdminLogin() {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/auth/login`, {
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '')
+      const response = await fetch(`${apiUrl}/admin/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
