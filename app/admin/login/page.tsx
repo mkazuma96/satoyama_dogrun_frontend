@@ -10,8 +10,9 @@ import { toast } from "sonner"
 import { Shield } from "lucide-react"
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  // 開発環境用のデフォルト値を設定
+  const [email, setEmail] = useState("admin@satoyama-dogrun.com")
+  const [password, setPassword] = useState("admin123")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
@@ -94,6 +95,17 @@ export default function AdminLogin() {
               {isLoading ? "ログイン中..." : "ログイン"}
             </Button>
           </form>
+          
+          {/* 開発環境用の認証情報表示 */}
+          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+            <p className="text-sm font-semibold text-yellow-800 mb-2">
+              開発環境用認証情報
+            </p>
+            <div className="text-sm text-yellow-700 space-y-1">
+              <p>メールアドレス: admin@satoyama-dogrun.com</p>
+              <p>パスワード: admin123</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
