@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type FormEvent, useCallback, useMemo, useEffect } from "react"
-import { MapPin, Bell, Activity, MessageCircle, QrCode, Users } from "lucide-react"
+import { MapPin, Bell, Home, MessageCircle, QrCode, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 
@@ -17,11 +17,12 @@ import { CommentModal } from "@/components/modals/comment-modal"
 import { AddDogRegistrationModal } from "@/components/modals/add-dog-registration-modal"
 import { EditDogModal } from "@/components/modals/edit-dog-modal"
 import { EditOwnerModal } from "@/components/modals/edit-owner-modal"
+import { ApplicationStatusModal } from "@/components/application-status-modal"
 
 import { currentUsers, initialRecentPosts, initialNotices, initialOwnerProfile, notices, posts, upcomingEvents } from "@/lib/data"
 import { registeredEmail, UserStatus, ActiveTab, NewDogRegistrationStatus, CalendarType } from "@/lib/constants"
 import type { DogProfile, Post, Notice, OwnerProfile } from "@/lib/types"
-import { RegisterRequest } from "@/lib/api"
+import { RegisterRequest, apiClient, ApplicationRequest } from "@/lib/api"
 
 // Temporary owner profile for demo purposes
 const tempInitialOwnerProfile: OwnerProfile = {
@@ -106,6 +107,8 @@ export default function DogrunsApp() {
 
   // Edit Owner Modal States
   const [showEditOwnerModal, setShowEditOwnerModal] = useState<boolean>(false)
+  const [showApplicationStatusModal, setShowApplicationStatusModal] = useState<boolean>(false)
+  const [applicationId, setApplicationId] = useState<string | null>(null)
   const [editedOwnerFullName, setEditedOwnerFullName] = useState<string>(ownerProfile.fullName)
   const [editedOwnerAddress, setEditedOwnerAddress] = useState<string>(ownerProfile.address)
   const [editedOwnerEmail, setEditedOwnerEmail] = useState<string>(ownerProfile.email)
@@ -118,7 +121,7 @@ export default function DogrunsApp() {
   // --- Handlers ---
 
   const handleRegistrationSubmit = useCallback(
-    (
+    async (
       e: FormEvent,
       postalCode: string,
       prefecture: string,
@@ -127,8 +130,10 @@ export default function DogrunsApp() {
       building: string,
       applicationDate: string,
     ) => {
+      console.log("handleRegistrationSubmit called!")
       e.preventDefault()
       const form = e.currentTarget as HTMLFormElement
+      console.log("Form elements:", form.elements)
       const password = (form.elements.namedItem("password") as HTMLInputElement).value
       const confirmPassword = (form.elements.namedItem("confirmPassword") as HTMLInputElement).value
       const fullName = (form.elements.namedItem("fullName") as HTMLInputElement).value
@@ -148,51 +153,91 @@ export default function DogrunsApp() {
         return
       }
 
+      // 名前を姓と名に分割（スペースで区切る）
+      const nameParts = fullName.split(' ')
+      const lastName = nameParts[0] || ''
+      const firstName = nameParts.slice(1).join(' ') || ''
+
       // Combine address fields
       const fullAddress = `${postalCode} ${prefecture}${city}${street}${building ? ` ${building}` : ""}`.trim()
 
-      const registrationData: RegisterRequest = {
+      const applicationData: ApplicationRequest = {
         email,
         password,
-        fullName,
+        last_name: lastName,
+        first_name: firstName,
+        phone_number: phoneNumber,
         address: fullAddress,
-        phoneNumber,
-        imabariResidency: selectedImabariResidency,
-        vaccinationCertificate: vaccinationCertificateFile,
-        dogName: dogName,
-        dogBreed: dogBreed,
-        dogWeight: parseFloat(dogWeight),
-        dogPersonality: [], // Assuming no personality input in this form
-        dogLastVaccinationDate: "", // Assuming no date input in this form
+        prefecture: prefecture,
+        city: city,
+        postal_code: postalCode,
+        dog_name: dogName,
+        dog_breed: dogBreed || undefined,
+        dog_weight: dogWeight || undefined,
+        // vaccine_certificate は後でBase64エンコードする必要がある場合に対応
       }
 
-      console.log("Registration Data:", registrationData)
-      // Simulate API call
-      setTimeout(() => {
+      try {
+        console.log("申請データ送信中:", applicationData)
+        console.log("API呼び出し開始")
+        const response = await apiClient.applyRegistration(applicationData)
+        console.log("API呼び出し成功:", response)
+        
+        // 申請IDをローカルストレージに保存（後で状況確認用）
+        localStorage.setItem('application_id', response.application_id)
+        
         setUserRegisteredEmail(email) // For demo login
         setUserStatus(UserStatus.RegistrationPending)
         toast.success("利用申請が送信されました", {
-          description: "管理者の承認をお待ちください。",
+          description: `申請ID: ${response.application_id}\n管理者の承認をお待ちください。`,
         })
-      }, 1000)
+      } catch (error: any) {
+        console.error("申請エラー:", error)
+        toast.error("申請の送信に失敗しました", {
+          description: error.response?.data?.detail || "エラーが発生しました。もう一度お試しください。",
+        })
+      }
     },
     [vaccinationCertificateFile, selectedImabariResidency, setUserStatus, setUserRegisteredEmail],
   )
 
   const handleLoginSubmit = useCallback(
-    (e: FormEvent) => {
+    async (e: FormEvent) => {
       e.preventDefault()
       const form = e.currentTarget as HTMLFormElement
       const email = (form.elements.namedItem("loginEmail") as HTMLInputElement).value
+      const password = (form.elements.namedItem("loginPassword") as HTMLInputElement)?.value
 
-      if (email === userRegisteredEmail) {
+      if (!password) {
+        setLoginError("パスワードを入力してください。")
+        return
+      }
+
+      try {
+        const response = await apiClient.login({ email, password })
+        
+        // トークンは apiClient.login 内で自動的に localStorage に保存される
         setUserStatus(UserStatus.LoggedIn)
         setLoginError("")
-      } else {
-        setLoginError("メールアドレスが登録されていません。")
+        toast.success("ログインしました")
+        
+        // ユーザー情報を取得
+        try {
+          const userInfo = await apiClient.getCurrentUser()
+          console.log("ログインユーザー情報:", userInfo)
+        } catch (error) {
+          console.error("ユーザー情報取得エラー:", error)
+        }
+      } catch (error: any) {
+        console.error("ログインエラー:", error)
+        if (error.response?.status === 401) {
+          setLoginError("メールアドレスまたはパスワードが正しくありません。")
+        } else {
+          setLoginError("ログインに失敗しました。もう一度お試しください。")
+        }
       }
     },
-    [setUserStatus, setLoginError, userRegisteredEmail],
+    [setUserStatus, setLoginError],
   )
 
   const handleForgotPasswordSubmit = useCallback(
@@ -204,14 +249,27 @@ export default function DogrunsApp() {
   )
 
   const handleLogout = useCallback(() => {
+    apiClient.logout() // localStorage からトークンを削除
     setUserStatus(UserStatus.Initial) // Change to UserStatus.Initial to simulate logout
     setActiveTab(ActiveTab.Home)
+    toast.success("ログアウトしました")
   }, [setUserStatus, setActiveTab])
 
   const handleDemoLogin = useCallback(() => {
     setUserStatus(UserStatus.LoggedIn)
     setLoginError("")
   }, [setUserStatus, setLoginError])
+
+  const handleCheckApplicationStatus = useCallback(() => {
+    // ローカルストレージから申請IDを取得
+    const storedApplicationId = localStorage.getItem('application_id')
+    if (storedApplicationId) {
+      setApplicationId(storedApplicationId)
+      setShowApplicationStatusModal(true)
+    } else {
+      toast.error("申請IDが見つかりません")
+    }
+  }, [])
 
   const handlePreviousMonth = useCallback(() => {
     setDisplayDate((prevDate) => {
@@ -414,18 +472,33 @@ export default function DogrunsApp() {
   }, [ownerProfile, setShowEditOwnerModal])
 
   return (
-    <div className="max-w-md mx-auto bg-white min-h-screen">
-      {/* Header */}
-      <div className="text-white px-4 py-3 sticky top-0 z-10" style={{ backgroundColor: "rgb(0, 8, 148)" }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <MapPin className="h-5 w-5" />
-            <h1 className="text-lg font-heading">里山ドッグラン</h1>
+    <div className="max-w-md mx-auto bg-white min-h-screen shadow-2xl">
+      {/* Header - アシックス里山スタジアムスタイル */}
+      <div className="relative bg-gradient-to-r from-asics-satoyama-blue to-asics-satoyama-blue-700 text-white px-4 py-5 sticky top-0 z-10 shadow-xl overflow-hidden">
+        {/* 波形デザイン */}
+        <div className="absolute inset-0 opacity-10">
+          <svg className="w-full h-full" viewBox="0 0 400 80" preserveAspectRatio="none">
+            <path
+              d="M0,40 Q100,20 200,40 T400,40 L400,80 L0,80 Z"
+              fill="currentColor"
+              className="text-fc-imabari-yellow"
+            />
+          </svg>
+        </div>
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="bg-asics-satoyama-green/30 p-2.5 rounded-full">
+              <MapPin className="h-6 w-6 text-asics-satoyama-green" />
+            </div>
+            <h1 className="text-2xl font-heading font-bold">里山ドッグラン</h1>
           </div>
           <div className="flex items-center space-x-2">
             <span
-              className="text-xs font-caption font-medium"
-              style={{ color: userStatus === UserStatus.LoggedIn ? "rgb(255, 235, 0)" : "white" }}
+              className={`text-xs font-medium px-3 py-1.5 rounded-full transition-all ${
+                userStatus === UserStatus.LoggedIn 
+                  ? "bg-asics-satoyama-gold text-white font-bold" 
+                  : "bg-white/20 text-white border border-white/30"
+              }`}
             >
               {userStatus === UserStatus.LoggedIn ? "ログイン中" : "ログアウト中"}
             </span>
@@ -436,13 +509,13 @@ export default function DogrunsApp() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowNoticesModal(true)}
-                    className="text-white hover:text-accent-yellow hover:bg-transparent"
+                    className="text-white hover:text-asics-satoyama-green hover:bg-white/10 rounded-full transition-all"
                   >
                     <Bell className="h-5 w-5" />
                     <span className="sr-only">お知らせ</span>
                   </Button>
                   {unreadNoticesCount > 0 && (
-                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-asics-satoyama-gold rounded-full animate-pulse">
                       {unreadNoticesCount}
                     </span>
                   )}
@@ -472,6 +545,7 @@ export default function DogrunsApp() {
             handleForgotPasswordSubmit={handleForgotPasswordSubmit}
             handleDemoLogin={handleDemoLogin}
             handleLogout={handleLogout}
+            onCheckApplicationStatus={handleCheckApplicationStatus}
             postalCode={postalCode}
             setPostalCode={setPostalCode}
             prefecture={prefecture}
@@ -656,76 +730,90 @@ export default function DogrunsApp() {
         handleCancelOwnerEdit={handleCancelOwnerEdit}
       />
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-asics-blue-100">
-        <div className="flex justify-around py-2">
+      {/* Bottom Navigation - アシックス里山スタジアムスタイル */}
+      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t-2 border-asics-satoyama-blue/20 shadow-2xl">
+        <div className="flex justify-around py-3">
           <Button
             variant={activeTab === ActiveTab.Home ? "default" : "ghost"}
             size="sm"
             onClick={() => setActiveTab(ActiveTab.Home)}
-            className={`flex-col h-auto py-2 font-caption ${activeTab === ActiveTab.Home ? "text-white" : ""}`}
-            style={activeTab === ActiveTab.Home ? { backgroundColor: "rgb(0, 8, 148)" } : { color: "rgb(0, 8, 148)" }}
+            className={`flex-col h-auto py-2 px-4 rounded-xl transition-all transform ${
+              activeTab === ActiveTab.Home 
+                ? "bg-asics-satoyama-blue text-white shadow-lg scale-105" 
+                : "text-asics-satoyama-blue hover:bg-asics-satoyama-blue/10"
+            }`}
           >
-            <Activity className="h-4 w-4 mb-1" />
-            <span className="text-xs">ホーム</span>
+            <Home className={`h-5 w-5 mb-1 ${activeTab === ActiveTab.Home ? "animate-pulse" : ""}`} />
+            <span className="text-xs font-bold">ホーム</span>
           </Button>
           <Button
             variant={activeTab === ActiveTab.Events ? "default" : "ghost"}
             size="sm"
             onClick={() => setActiveTab(ActiveTab.Events)}
-            className={`flex-col h-auto py-2 font-caption ${activeTab === ActiveTab.Events ? "text-white" : ""}`}
-            style={activeTab === ActiveTab.Events ? { backgroundColor: "rgb(0, 8, 148)" } : { color: "rgb(0, 8, 148)" }}
+            className={`flex-col h-auto py-2 px-4 rounded-xl transition-all transform ${
+              activeTab === ActiveTab.Events 
+                ? "bg-asics-satoyama-blue text-white shadow-lg scale-105" 
+                : "text-asics-satoyama-blue hover:bg-asics-satoyama-blue/10"
+            }`}
           >
-            <MapPin className="h-4 w-4 mb-1" />
-            <span className="text-xs">イベント</span>
+            <MapPin className={`h-5 w-5 mb-1 ${activeTab === ActiveTab.Events ? "animate-pulse" : ""}`} />
+            <span className="text-xs font-bold">イベント</span>
           </Button>
           <Button
             variant={activeTab === ActiveTab.Feed && userStatus === UserStatus.LoggedIn ? "default" : "ghost"}
             size="sm"
             onClick={() => userStatus === UserStatus.LoggedIn && setActiveTab(ActiveTab.Feed)}
-            className={`flex-col h-auto py-2 font-caption ${activeTab === ActiveTab.Feed && userStatus === UserStatus.LoggedIn ? "text-white" : ""} ${userStatus !== UserStatus.LoggedIn ? "opacity-50 cursor-not-allowed" : ""}`}
-            style={
+            className={`flex-col h-auto py-2 px-4 rounded-xl transition-all transform ${
               activeTab === ActiveTab.Feed && userStatus === UserStatus.LoggedIn
-                ? { backgroundColor: "rgb(0, 8, 148)" }
-                : { color: "rgb(0, 8, 148)" }
-            }
+                ? "bg-asics-satoyama-blue text-white shadow-lg scale-105"
+                : userStatus !== UserStatus.LoggedIn
+                ? "text-gray-400 opacity-50 cursor-not-allowed"
+                : "text-asics-satoyama-blue hover:bg-asics-satoyama-blue/10"
+            }`}
             disabled={userStatus !== UserStatus.LoggedIn}
           >
-            <MessageCircle className="h-4 w-4 mb-1" />
-            <span className="text-xs">投稿</span>
+            <MessageCircle className={`h-5 w-5 mb-1 ${activeTab === ActiveTab.Feed && userStatus === UserStatus.LoggedIn ? "animate-pulse" : ""}`} />
+            <span className="text-xs font-bold">投稿</span>
           </Button>
           <Button
             variant={activeTab === ActiveTab.Entry && userStatus === UserStatus.LoggedIn ? "default" : "ghost"}
             size="sm"
             onClick={() => userStatus === UserStatus.LoggedIn && setActiveTab(ActiveTab.Entry)}
-            className={`flex-col h-auto py-2 font-caption ${activeTab === ActiveTab.Entry && userStatus === UserStatus.LoggedIn ? "text-white" : ""} ${userStatus !== UserStatus.LoggedIn ? "opacity-50 cursor-not-allowed" : ""}`}
-            style={
+            className={`flex-col h-auto py-2 px-4 rounded-xl transition-all transform ${
               activeTab === ActiveTab.Entry && userStatus === UserStatus.LoggedIn
-                ? { backgroundColor: "rgb(0, 8, 148)" }
-                : { color: "rgb(0, 8, 148)" }
-            }
+                ? "bg-asics-satoyama-blue text-white shadow-lg scale-105"
+                : userStatus !== UserStatus.LoggedIn
+                ? "text-gray-400 opacity-50 cursor-not-allowed"
+                : "text-asics-satoyama-blue hover:bg-asics-satoyama-blue/10"
+            }`}
             disabled={userStatus !== UserStatus.LoggedIn}
           >
-            <QrCode className="h-4 w-4 mb-1" />
-            <span className="text-xs">入場</span>
+            <QrCode className={`h-5 w-5 mb-1 ${activeTab === ActiveTab.Entry && userStatus === UserStatus.LoggedIn ? "animate-pulse" : ""}`} />
+            <span className="text-xs font-bold">入場</span>
           </Button>
           <Button
             variant={activeTab === ActiveTab.Profile && userStatus === UserStatus.LoggedIn ? "default" : "ghost"}
             size="sm"
             onClick={() => userStatus === UserStatus.LoggedIn && setActiveTab(ActiveTab.Profile)}
-            className={`flex-col h-auto py-2 font-caption ${activeTab === ActiveTab.Profile && userStatus === UserStatus.LoggedIn ? "text-white" : ""} ${userStatus !== UserStatus.LoggedIn ? "opacity-50 cursor-not-allowed" : ""}`}
-            style={
+            className={`flex-col h-auto py-2 px-4 rounded-xl transition-all transform ${
               activeTab === ActiveTab.Profile && userStatus === UserStatus.LoggedIn
-                ? { backgroundColor: "rgb(0, 8, 148)" }
-                : { color: "rgb(0, 8, 148)" }
-            }
+                ? "bg-asics-satoyama-blue text-white shadow-lg scale-105"
+                : userStatus !== UserStatus.LoggedIn
+                ? "text-gray-400 opacity-50 cursor-not-allowed"
+                : "text-asics-satoyama-blue hover:bg-asics-satoyama-blue/10"
+            }`}
             disabled={userStatus !== UserStatus.LoggedIn}
           >
-            <Users className="h-4 w-4 mb-1" />
-            <span className="text-xs">マイページ</span>
+            <Users className={`h-5 w-5 mb-1 ${activeTab === ActiveTab.Profile && userStatus === UserStatus.LoggedIn ? "animate-pulse" : ""}`} />
+            <span className="text-xs font-bold">マイページ</span>
           </Button>
         </div>
       </div>
+      <ApplicationStatusModal
+        isOpen={showApplicationStatusModal}
+        onClose={() => setShowApplicationStatusModal(false)}
+        applicationId={applicationId}
+      />
     </div>
   )
 }

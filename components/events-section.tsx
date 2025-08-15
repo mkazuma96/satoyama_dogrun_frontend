@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,6 +10,8 @@ import { upcomingEvents } from "@/lib/data"
 import { generateDogrunCalendarDays, generateSalonCalendarDays, getDayStyle } from "@/lib/utils"
 import { CalendarType, DayStatus, UserStatus } from "@/lib/constants"
 import type { Event, CalendarDay } from "@/lib/types"
+import { EventList } from "@/components/event-list"
+import { EventDetailModal } from "@/components/event-detail-modal"
 
 interface EventsSectionProps {
   userStatus: UserStatus
@@ -27,6 +30,9 @@ export function EventsSection({
   handlePreviousMonth,
   handleNextMonth,
 }: EventsSectionProps) {
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
+  const [showEventModal, setShowEventModal] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
   const currentYear = displayDate.getFullYear()
   const currentMonth = displayDate.getMonth() + 1 // getMonth() is 0-indexed
 
@@ -180,56 +186,41 @@ export function EventsSection({
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
-        {upcomingEvents.map((event: Event) => (
-          <Card key={event.id} className="cursor-pointer hover:shadow-md transition-shadow border-asics-blue-100">
-            <CardContent className="p-4">
-              <div className="flex items-start space-x-3">
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: "rgba(0, 8, 148, 0.1)" }}
-                >
-                  <Calendar className="h-6 w-6" style={{ color: "rgb(0, 8, 148)" }} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-heading text-sm mb-1" style={{ color: "rgb(0, 8, 148)" }}>
-                    {event.title}
-                  </h3>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500 font-caption mb-2">
-                    <span>{event.date}</span>
-                    <span>{event.time}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Users className="h-4 w-4 text-gray-400" />
-                    <span className="text-xs text-gray-600 font-caption">{event.participants}人参加予定</span>
-                  </div>
-                </div>
-                {/* ログインしていない場合は参加ボタンを非表示にするか、ログインを促す */}
-                {userStatus === UserStatus.LoggedIn ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-asics-blue-200 bg-transparent"
-                    style={{ color: "rgb(0, 8, 148)" }}
-                  >
-                    参加する
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-asics-blue-200 bg-transparent opacity-50 cursor-not-allowed"
-                    style={{ color: "rgb(0, 8, 148)" }}
-                    disabled
-                  >
-                    ログインして参加
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* イベント一覧 */}
+      {userStatus === UserStatus.LoggedIn ? (
+        <>
+          <EventList 
+            key={refreshKey}
+            onEventClick={(eventId) => {
+              setSelectedEventId(eventId)
+              setShowEventModal(true)
+            }}
+          />
+          
+          <EventDetailModal
+            eventId={selectedEventId}
+            isOpen={showEventModal}
+            onClose={() => {
+              setShowEventModal(false)
+              setSelectedEventId(null)
+            }}
+            onRegistrationChange={() => {
+              setRefreshKey(prev => prev + 1)
+            }}
+          />
+        </>
+      ) : (
+        <Card className="border-asics-blue-200" style={{ backgroundColor: "rgba(0, 8, 148, 0.05)", borderColor: "rgba(0, 8, 148, 0.2)" }}>
+          <CardContent className="p-6 text-center">
+            <h3 className="text-lg font-heading mb-2" style={{ color: "rgb(0, 8, 148)" }}>
+              イベント参加にはログインが必要です
+            </h3>
+            <p className="text-sm text-gray-600 font-caption">
+              イベントの詳細確認や参加登録は、ログイン後にご利用いただけます。
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

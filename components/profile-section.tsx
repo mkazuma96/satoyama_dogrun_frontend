@@ -1,14 +1,17 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dog, LogOut, Users } from "lucide-react"
+import { Dog, LogOut, Users, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 import { isVaccineUpToDate } from "@/lib/utils"
 import { UserStatus } from "@/lib/constants"
 import type { DogProfile, OwnerProfile } from "@/lib/types"
+import { apiClient } from "@/lib/api"
 
 interface ProfileSectionProps {
   userStatus: UserStatus
@@ -33,6 +36,53 @@ export function ProfileSection({
   setOwnerProfile,
   setShowEditOwnerModal,
 }: ProfileSectionProps) {
+  const [loading, setLoading] = useState(false)
+  const [profileData, setProfileData] = useState<any>(null)
+
+  useEffect(() => {
+    if (userStatus === UserStatus.LoggedIn) {
+      fetchProfileData()
+    }
+  }, [userStatus])
+
+  const fetchProfileData = async () => {
+    setLoading(true)
+    try {
+      const profile = await apiClient.getUserProfile()
+      setProfileData(profile)
+      
+      // 犬情報を更新
+      if (profile.dogs) {
+        const dogs = profile.dogs.map((dog: any) => ({
+          id: dog.id,
+          name: dog.name,
+          breed: dog.breed || '不明',
+          weight: dog.weight || '',
+          personality: dog.personality ? dog.personality.split(',') : [],
+          lastVaccinationDate: dog.lastVaccinationDate || new Date().toISOString(),
+          avatar: '',
+        }))
+        setLoggedInUserDogs(dogs)
+      }
+      
+      // オーナー情報を更新
+      if (profile) {
+        setOwnerProfile({
+          ...ownerProfile,
+          fullName: `${profile.last_name || ''} ${profile.first_name || ''}`.trim() || 'ユーザー',
+          email: profile.email,
+          phoneNumber: profile.phone_number || '',
+          address: profile.address || '',
+        })
+      }
+    } catch (error) {
+      console.error("プロフィール取得エラー:", error)
+      toast.error("プロフィール情報の取得に失敗しました")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   if (userStatus !== UserStatus.LoggedIn) {
     return (
       <div className="space-y-6 text-center">
@@ -52,6 +102,15 @@ export function ProfileSection({
       </div>
     )
   }
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    )
+  }
+  
   return (
     <div className="space-y-6">
       {/* User Profile */}

@@ -65,29 +65,41 @@ export default function AdminNavigation() {
       {/* ハンバーガーメニューボタン - タブレット以下で表示 */}
       <div className="md:hidden fixed top-4 left-4 z-50">
         <Button
-          variant="outline"
+          variant="asics-primary"
           size="sm"
           onClick={toggleMenu}
-          className="bg-white shadow-lg hover:bg-gray-50 transition-colors w-12 h-12"
+          className="shadow-lg w-12 h-12"
+          rounded="full"
           aria-label={isMobileMenuOpen ? "メニューを閉じる" : "メニューを開く"}
         >
           {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
       </div>
 
-      {/* サイドバーナビゲーション */}
-      <nav className={`fixed left-0 top-0 h-full w-64 bg-white shadow-lg border-r border-gray-200 z-40 transition-transform duration-300 ease-in-out ${
+      {/* サイドバーナビゲーション - アシックス里山スタジアムスタイル */}
+      <nav className={`fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-asics-satoyama-blue to-asics-satoyama-blue-800 shadow-2xl z-40 transition-transform duration-300 ease-in-out ${
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       }`}>
-        {/* Logo and Title */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <Shield className="h-8 w-8 text-blue-600" />
-            <h1 className="text-xl font-semibold text-gray-900">
-              里山ドッグラン
-            </h1>
+        {/* Logo and Title - 波形デザイン */}
+        <div className="relative p-6 border-b border-asics-satoyama-blue-600 overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <svg className="w-full h-full" viewBox="0 0 200 80" preserveAspectRatio="none">
+              <path
+                d="M0,40 Q50,20 100,40 T200,40 L200,80 L0,80 Z"
+                fill="currentColor"
+                className="text-asics-satoyama-green"
+              />
+            </svg>
           </div>
-          <p className="text-sm text-gray-500 mt-1">管理システム</p>
+          <div className="relative z-10">
+            <div className="flex items-center space-x-3">
+              <Shield className="h-8 w-8 text-asics-satoyama-green" />
+              <h1 className="text-xl font-heading font-bold text-white">
+                里山ドッグラン
+              </h1>
+            </div>
+            <p className="text-sm text-asics-satoyama-green/70 mt-1">管理システム</p>
+          </div>
         </div>
 
         {/* Navigation Menu - ログイン時のみ表示 */}
@@ -101,10 +113,10 @@ export default function AdminNavigation() {
                   <button
                     key={item.name}
                     onClick={() => handleNavigation(item.href)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
                       isActive
-                        ? "bg-blue-100 text-blue-700 border border-blue-200"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                        ? "bg-asics-satoyama-gold text-white shadow-lg transform scale-105"
+                        : "text-white/80 hover:text-white hover:bg-asics-satoyama-blue-600 hover:shadow-md"
                     }`}
                   >
                     <Icon className="h-5 w-5" />
@@ -118,22 +130,22 @@ export default function AdminNavigation() {
 
         {/* User Info and Logout - ログイン時のみ表示 */}
         {isAuthenticated && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-asics-satoyama-blue-600 bg-asics-satoyama-blue-900">
             <div className="space-y-3">
-              <div className="text-sm text-gray-500 px-2">
+              <div className="text-sm text-asics-satoyama-green/70 px-2">
                 {user?.email}
               </div>
               <Button
-                variant="outline"
+                variant="asics-secondary"
                 size="sm"
                 onClick={() => router.push("/")}
-                className="w-full flex items-center justify-center space-x-2 border-gray-300 text-gray-700 hover:bg-gray-50"
+                className="w-full flex items-center justify-center space-x-2 bg-white/10 border-white/30 text-white hover:bg-white hover:text-asics-satoyama-blue"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span>ユーザー側へ戻る</span>
               </Button>
               <Button
-                variant="outline"
+                variant="asics-gold"
                 size="sm"
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center space-x-2"

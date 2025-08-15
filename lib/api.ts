@@ -3,7 +3,7 @@ import type { DogProfile, Event, Post, Notice, Tag, OwnerProfile, Comment } from
 
 // API設定
 const API_CONFIG = {
-  baseURL: process.env. || 'http://localhost:8000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -82,6 +82,36 @@ export interface RegisterRequest {
   dogLastVaccinationDate: string;
 }
 
+// 新規申請用インターフェース
+export interface ApplicationRequest {
+  email: string;
+  password: string;
+  last_name: string;
+  first_name: string;
+  phone_number: string;
+  address: string;
+  prefecture: string;
+  city: string;
+  postal_code?: string;
+  dog_name: string;
+  dog_breed?: string;
+  dog_weight?: string;
+  dog_age?: number;
+  dog_gender?: string;
+  vaccine_certificate?: string;
+  request_date?: string;
+  request_time?: string;
+  notes?: string;
+}
+
+export interface ApplicationStatusResponse {
+  application_id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string;
+  approved_at?: string;
+  created_at: string;
+}
+
 export interface CreatePostRequest {
   content: string;
   category: string;
@@ -116,6 +146,64 @@ export const apiClient = {
       const response = await api.post('/auth/login', data);
       const { access_token } = response.data;
       localStorage.setItem('access_token', access_token);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 新規利用申請
+  submitApplication: async (data: any): Promise<ApplicationStatusResponse> => {
+    try {
+      const formData = new FormData();
+      
+      // 基本情報
+      formData.append('full_name', data.full_name);
+      formData.append('email', data.email);
+      formData.append('phone_number', data.phone_number);
+      formData.append('postal_code', data.postal_code);
+      formData.append('prefecture', data.prefecture);
+      formData.append('city', data.city);
+      formData.append('street', data.street);
+      formData.append('building', data.building);
+      formData.append('imabari_residency', data.imabari_residency);
+      formData.append('password', data.password);
+      
+      // 犬情報
+      formData.append('dog_name', data.dog_name);
+      formData.append('dog_breed', data.dog_breed);
+      formData.append('dog_weight', data.dog_weight.toString());
+      
+      // ファイル（ワクチン証明書）
+      if (data.vaccination_certificate) {
+        formData.append('vaccination_certificate', data.vaccination_certificate);
+      }
+      
+      const response = await api.post('/auth/apply', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 既存の関数もそのまま残す（互換性のため）
+  applyRegistration: async (data: ApplicationRequest): Promise<ApplicationStatusResponse> => {
+    try {
+      const response = await api.post('/auth/apply', data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 申請状況確認
+  getApplicationStatus: async (applicationId: string): Promise<ApplicationStatusResponse> => {
+    try {
+      const response = await api.get(`/auth/application-status/${applicationId}`);
       return response.data;
     } catch (error) {
       throw error;
@@ -158,6 +246,76 @@ export const apiClient = {
   },
 
   // ユーザー関連
+  // プロフィール詳細取得（犬情報を含む）
+  getUserProfile: async (): Promise<any> => {
+    try {
+      const response = await api.get('/users/profile');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 犬情報の取得
+  getUserDogs: async (): Promise<any[]> => {
+    try {
+      const response = await api.get('/dogs');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 犬の追加
+  addDog: async (data: any): Promise<any> => {
+    try {
+      const response = await api.post('/dogs', data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 犬の更新
+  updateDog: async (dogId: string, data: any): Promise<any> => {
+    try {
+      const response = await api.put(`/dogs/${dogId}`, data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 犬の削除
+  deleteDog: async (dogId: string): Promise<any> => {
+    try {
+      const response = await api.delete(`/dogs/${dogId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // ワクチン接種記録の取得
+  getVaccinationRecords: async (dogId: string): Promise<any[]> => {
+    try {
+      const response = await api.get(`/dogs/${dogId}/vaccinations`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // ワクチン接種記録の追加
+  addVaccinationRecord: async (dogId: string, data: any): Promise<any> => {
+    try {
+      const response = await api.post(`/dogs/${dogId}/vaccinations`, data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   getCurrentUser: async (): Promise<ApiResponse<OwnerProfile>> => {
     try {
       const response = await api.get('/users/me');
@@ -275,9 +433,49 @@ export const apiClient = {
   },
 
   // イベント関連
-  getEvents: async (): Promise<ApiResponse<Event[]>> => {
+  getEvents: async (upcomingOnly: boolean = true): Promise<any[]> => {
     try {
-      const response = await api.get('/events');
+      const response = await api.get('/events', {
+        params: { upcoming_only: upcomingOnly }
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getEventDetail: async (eventId: string): Promise<any> => {
+    try {
+      const response = await api.get(`/events/${eventId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  registerForEvent: async (eventId: string, dogIds: string[]): Promise<any> => {
+    try {
+      const response = await api.post(`/events/${eventId}/register`, {
+        dog_ids: dogIds
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  cancelEventRegistration: async (eventId: string): Promise<any> => {
+    try {
+      const response = await api.delete(`/events/${eventId}/register`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getEventParticipants: async (eventId: string): Promise<any[]> => {
+    try {
+      const response = await api.get(`/events/${eventId}/participants`);
       return response.data;
     } catch (error) {
       throw error;
@@ -313,27 +511,56 @@ export const apiClient = {
   },
 
   // 入場関連
-  scanQRCode: async (qrData: string): Promise<ApiResponse<{ message: string; qr_data: string }>> => {
+  generateQRCode: async (): Promise<any> => {
     try {
-      const response = await api.post('/entry/scan', { qrData });
+      const response = await api.get('/entry/qrcode');
       return response.data;
     } catch (error) {
       throw error;
     }
   },
 
-  enterDogRun: async (dogIds: number[]): Promise<ApiResponse<{ message: string; dog_ids: number[] }>> => {
+  scanQRCode: async (qrData: any): Promise<any> => {
     try {
-      const response = await api.post('/entry/enter', { dogIds });
+      const response = await api.post('/entry/scan', qrData);
       return response.data;
     } catch (error) {
       throw error;
     }
   },
 
-  exitDogRun: async (): Promise<ApiResponse<{ message: string }>> => {
+  enterDogRun: async (dogIds: string[]): Promise<any> => {
+    try {
+      const response = await api.post('/entry/enter', { dog_ids: dogIds });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  exitDogRun: async (): Promise<any> => {
     try {
       const response = await api.post('/entry/exit');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getCurrentVisitors: async (): Promise<any> => {
+    try {
+      const response = await api.get('/entry/current');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getEntryHistory: async (limit: number = 50): Promise<any[]> => {
+    try {
+      const response = await api.get('/entry/history', {
+        params: { limit }
+      });
       return response.data;
     } catch (error) {
       throw error;
@@ -344,6 +571,64 @@ export const apiClient = {
   getTags: async (): Promise<ApiResponse<Tag[]>> => {
     try {
       const response = await api.get('/tags');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 管理者認証
+  adminLogin: async (email: string, password: string): Promise<any> => {
+    try {
+      const response = await api.post('/admin/auth/login', { email, password });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 管理者用API
+  getAdminApplications: async (): Promise<any> => {
+    try {
+      const token = localStorage.getItem('admin_access_token');
+      const response = await api.get('/admin/applications', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  approveApplication: async (applicationId: string, notes?: string): Promise<any> => {
+    try {
+      const token = localStorage.getItem('admin_access_token');
+      const response = await api.put(`/admin/applications/${applicationId}/approve`, {
+        admin_notes: notes
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  rejectApplication: async (applicationId: string, reason: string): Promise<any> => {
+    try {
+      const token = localStorage.getItem('admin_access_token');
+      const response = await api.put(`/admin/applications/${applicationId}/reject`, {
+        rejection_reason: reason,
+        admin_notes: reason
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       return response.data;
     } catch (error) {
       throw error;

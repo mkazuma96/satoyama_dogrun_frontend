@@ -14,6 +14,8 @@ import { termsOfUseText, UserStatus, ImabariResidency } from "@/lib/constants"
 import type { DogProfile } from "@/lib/types"
 import { useState, useMemo, useCallback, FormEvent } from "react"
 import { X } from "lucide-react"
+import { apiClient } from "@/lib/api"
+import { toast } from "sonner"
 
 const dogBreeds = [
   "トイ・プードル",
@@ -99,6 +101,7 @@ interface HomeSectionProps {
   handleForgotPasswordSubmit: (e: FormEvent) => void
   handleDemoLogin: () => void
   handleLogout: () => void
+  onCheckApplicationStatus?: () => void
   postalCode: string
   setPostalCode: (code: string) => void
   prefecture: string
@@ -129,6 +132,7 @@ export function HomeSection({
   handleForgotPasswordSubmit,
   handleDemoLogin,
   handleLogout,
+  onCheckApplicationStatus,
   postalCode,
   setPostalCode,
   prefecture,
@@ -291,15 +295,26 @@ export function HomeSection({
           )}
 
           {/* 利用申請フォーム */}
-          {userStatus === (UserStatus as any).RegistrationForm && (
+          {userStatus === UserStatus.RegistrationForm && (
             <div className="space-y-6 mt-6">
               <Card className="border-asics-blue-100">
                 <CardContent className="p-4">
-                  <form onSubmit={onSubmit} className="space-y-4">
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    console.log("Form submit clicked!");
+                    console.log("Values:", { postalCode, prefecture, city, street, building, applicationDate });
+                    try {
+                      handleRegistrationSubmit(e, postalCode, prefecture, city, street, building, applicationDate);
+                    } catch (error: any) {
+                      console.error("Form submission error:", error);
+                      toast.error("フォーム送信でエラーが発生しました: " + (error?.message || "不明なエラー"));
+                    }
+                  }} className="space-y-4">
                     {/* 1. 利用規約・確認事項に同意 */}
                     <div className="flex items-center">
                       <input
                         id="agree"
+                        name="agree"
                         type="checkbox"
                         className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                         required
@@ -346,6 +361,7 @@ export function HomeSection({
                       <Input
                         type="text"
                         id="postalCode"
+                        name="postalCode"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="例: 123-4567"
                         maxLength={8}
@@ -362,6 +378,7 @@ export function HomeSection({
                       <Input
                         type="text"
                         id="prefecture"
+                        name="prefecture"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="例: 東京都"
                         required
@@ -376,6 +393,7 @@ export function HomeSection({
                       <Input
                         type="text"
                         id="city"
+                        name="city"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="例: 渋谷区"
                         required
@@ -390,6 +408,7 @@ export function HomeSection({
                       <Input
                         type="text"
                         id="street"
+                        name="street"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="例: 1-1-1"
                         required
@@ -404,6 +423,7 @@ export function HomeSection({
                       <Input
                         type="text"
                         id="building"
+                        name="building"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="例: 〇〇マンション101号室 (任意)"
                         value={building}
@@ -418,6 +438,7 @@ export function HomeSection({
                       <Input
                         type="text"
                         id="fullName"
+                        name="fullName"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="田中 太郎"
                         required
@@ -431,6 +452,7 @@ export function HomeSection({
                       <Input
                         type="email"
                         id="email"
+                        name="email"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="your@example.com"
                         required
@@ -444,6 +466,7 @@ export function HomeSection({
                       <Input
                         type="tel"
                         id="phoneNumber"
+                        name="phoneNumber"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="090-1234-5678"
                         required
@@ -469,6 +492,7 @@ export function HomeSection({
                           <SelectItem value={ImabariResidency.NotInImabari}>今治市内には住んでいない</SelectItem>
                         </SelectContent>
                       </Select>
+                      <input type="hidden" name="imabariResidency" value={selectedImabariResidency} />
                     </div>
                     {/* 8. ワンちゃんのお名前 */}
                     <div>
@@ -478,6 +502,7 @@ export function HomeSection({
                       <Input
                         type="text"
                         id="dogName"
+                        name="dogName"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="ポチ"
                         required
@@ -505,6 +530,7 @@ export function HomeSection({
                           ))}
                         </SelectContent>
                       </Select>
+                      <input type="hidden" name="dogBreed" value={dogBreed} />
                       {dogBreed === "その他" && (
                         <Input
                           type="text"
@@ -525,6 +551,7 @@ export function HomeSection({
                       <Input
                         type="number"
                         id="dogWeight"
+                        name="dogWeight"
                         step="0.1"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="8.5"
@@ -544,6 +571,7 @@ export function HomeSection({
                       <Input
                         type="file"
                         id="vaccinationCertificate"
+                        name="vaccinationCertificate"
                         accept=".pdf,.jpg,.jpeg,.png"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         onChange={(e) => setVaccinationCertificateFile(e.target.files ? e.target.files[0] : null)}
@@ -561,6 +589,7 @@ export function HomeSection({
                       <Input
                         type="password"
                         id="password"
+                        name="password"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
@@ -572,11 +601,16 @@ export function HomeSection({
                       <Input
                         type="password"
                         id="confirmPassword"
+                        name="confirmPassword"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
                     </div>
-                    <Button type="submit" className="w-full font-caption">
+                    <Button 
+                      type="submit" 
+                      className="w-full font-caption"
+                      onClick={() => console.log("Button clicked directly!")}
+                    >
                       利用申請
                     </Button>
                   </form>
@@ -586,7 +620,7 @@ export function HomeSection({
           )}
 
           {/* その他の状態表示 */}
-          {userStatus === (UserStatus as any).RegistrationPending && (
+          {userStatus === UserStatus.RegistrationPending && (
             <div className="space-y-4">
               <h2 className="text-lg font-heading mb-4" style={{ color: "rgb(0, 8, 148)" }}>
                 申請中です
@@ -594,6 +628,13 @@ export function HomeSection({
               <p className="text-gray-500 dark:text-gray-400 font-caption">
                 利用申請ありがとうございます。管理者の承認をお待ちください。
               </p>
+              <Button 
+                onClick={onCheckApplicationStatus}
+                variant="outline"
+                className="w-full font-caption"
+              >
+                申請状況を確認
+              </Button>
               <Button onClick={handleLogout} className="w-full font-caption">
                 ログアウト
               </Button>
