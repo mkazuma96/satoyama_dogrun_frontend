@@ -1,4 +1,4 @@
-// File: /Users/hirotakoyanaka/Desktop/里山ドッグラン/satoyama_dogrun_frontend/app/page.tsx
+// File: /Users/hirotakoyanaka/Desktop/里山ドッグラン2/satoyama_dogrun_frontend-main/app/page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
