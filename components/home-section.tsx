@@ -143,6 +143,8 @@ export function HomeSection({
   const [dogName, setDogName] = useState("")
   const [dogBreed, setDogBreed] = useState("")
   const [dogWeight, setDogWeight] = useState("")
+  const [dogAge, setDogAge] = useState<number | undefined>()
+  const [dogGender, setDogGender] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [agree, setAgree] = useState(false)
@@ -166,6 +168,8 @@ export function HomeSection({
       dogName &&
       dogBreed &&
       dogWeight &&
+      dogAge &&
+      dogGender &&
       vaccinationCertificateFile &&
       password &&
       confirmPassword &&
@@ -185,6 +189,8 @@ export function HomeSection({
     dogName,
     dogBreed,
     dogWeight,
+    dogAge,
+    dogGender,
     vaccinationCertificateFile,
     password,
     confirmPassword,
@@ -235,6 +241,8 @@ export function HomeSection({
     formData.append('dogName', dogName);
     formData.append('dogBreed', dogBreed);
     formData.append('dogWeight', dogWeight);
+    formData.append('dogAge', dogAge ? dogAge.toString() : '');
+    formData.append('dogGender', dogGender);
     formData.append('password', password);
     if (vaccinationCertificateFile) {
       formData.append('vaccine_certificate', vaccinationCertificateFile);
@@ -604,6 +612,45 @@ export function HomeSection({
                           required
                         />
                       )}
+                    </div>
+                    {/* New Dog Gender Field */}
+                    <div>
+                      <Label htmlFor="dogGender" className="block text-sm font-caption font-medium text-gray-700">
+                        ワンちゃんの性別
+                      </Label>
+                      <Select onValueChange={setDogGender} value={dogGender} required>
+                        <SelectTrigger
+                          id="dogGender"
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 [&>svg]:!hidden justify-start"
+                        >
+                          <SelectValue placeholder="性別を選ぶ" className="text-left" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">オス</SelectItem>
+                          <SelectItem value="female">メス</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {/* New Dog Age Field */}
+                    <div>
+                      <Label htmlFor="dogAge" className="block text-sm font-caption font-medium text-gray-700">
+                        ワンちゃんが生まれた年
+                      </Label>
+                      <Select onValueChange={(value) => setDogAge(parseInt(value))} value={dogAge?.toString()} required>
+                        <SelectTrigger
+                          id="dogAge"
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 [&>svg]:!hidden justify-start"
+                        >
+                          <SelectValue placeholder="生まれた年を選ぶ" className="text-left" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 2100 - 1990 + 1 }, (_, i) => 1990 + i).map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     {/* 10. ワンちゃんの体重 */}
                     <div>
