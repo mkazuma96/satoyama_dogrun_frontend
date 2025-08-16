@@ -122,71 +122,18 @@ export default function DogrunsApp() {
 
   const handleRegistrationSubmit = useCallback(
     async (
-      e: FormEvent,
-      postalCode: string,
-      prefecture: string,
-      city: string,
-      street: string,
-      building: string,
-      applicationDate: string,
+      formData: FormData
     ) => {
-      console.log("handleRegistrationSubmit called!")
-      e.preventDefault()
-      const form = e.currentTarget as HTMLFormElement
-      console.log("Form elements:", form.elements)
-      const password = (form.elements.namedItem("password") as HTMLInputElement).value
-      const confirmPassword = (form.elements.namedItem("confirmPassword") as HTMLInputElement).value
-      const fullName = (form.elements.namedItem("fullName") as HTMLInputElement).value
-      const email = (form.elements.namedItem("email") as HTMLInputElement).value
-      const phoneNumber = (form.elements.namedItem("phoneNumber") as HTMLInputElement).value
-      const dogName = (form.elements.namedItem("dogName") as HTMLInputElement).value
-      const dogBreed = (form.elements.namedItem("dogBreed") as HTMLInputElement).value
-      const dogWeight = (form.elements.namedItem("dogWeight") as HTMLInputElement).value
-
-      if (password !== confirmPassword) {
-        alert("パスワードと確認用パスワードが一致しません。")
-        return
-      }
-
-      if (!vaccinationCertificateFile) {
-        alert("ワクチンの接種証明書を添付してください。")
-        return
-      }
-
-      // 名前を姓と名に分割（スペースで区切る）
-      const nameParts = fullName.split(' ')
-      const lastName = nameParts[0] || ''
-      const firstName = nameParts.slice(1).join(' ') || ''
-
-      // Combine address fields
-      const fullAddress = `${postalCode} ${prefecture}${city}${street}${building ? ` ${building}` : ""}`.trim()
-
-      const applicationData: ApplicationRequest = {
-        email,
-        password,
-        last_name: lastName,
-        first_name: firstName,
-        phone_number: phoneNumber,
-        address: fullAddress,
-        prefecture: prefecture,
-        city: city,
-        postal_code: postalCode,
-        dog_name: dogName,
-        dog_breed: dogBreed || undefined,
-        dog_weight: dogWeight || undefined,
-        // vaccine_certificate は後でBase64エンコードする必要がある場合に対応
-      }
-
       try {
-        console.log("申請データ送信中:", applicationData)
-        console.log("API呼び出し開始")
-        const response = await apiClient.applyRegistration(applicationData)
+        console.log("申請データ送信中:", formData)
+        const response = await apiClient.applyRegistration(formData)
         console.log("API呼び出し成功:", response)
-        
-        // 申請IDをローカルストレージに保存（後で状況確認用）
+
         localStorage.setItem('application_id', response.application_id)
         
-        setUserRegisteredEmail(email) // For demo login
+        // emailをFormDataから取得してセット
+        const email = formData.get('email') as string;
+        setUserRegisteredEmail(email)
         setUserStatus(UserStatus.RegistrationPending)
         toast.success("利用申請が送信されました", {
           description: `申請ID: ${response.application_id}\n管理者の承認をお待ちください。`,
@@ -198,7 +145,7 @@ export default function DogrunsApp() {
         })
       }
     },
-    [vaccinationCertificateFile, selectedImabariResidency, setUserStatus, setUserRegisteredEmail],
+    [setUserStatus, setUserRegisteredEmail],
   )
 
   const handleLoginSubmit = useCallback(

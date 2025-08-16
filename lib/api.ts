@@ -191,9 +191,13 @@ export const apiClient = {
   },
 
   // 既存の関数もそのまま残す（互換性のため）
-  applyRegistration: async (data: ApplicationRequest): Promise<ApplicationStatusResponse> => {
+  applyRegistration: async (data: FormData): Promise<ApplicationStatusResponse> => {
     try {
-      const response = await api.post('/auth/apply', data);
+      const response = await api.post('/auth/apply', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       return response.data;
     } catch (error) {
       throw error;

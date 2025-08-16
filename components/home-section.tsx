@@ -89,13 +89,7 @@ interface HomeSectionProps {
   selectedImabariResidency: string
   setSelectedImabariResidency: (residency: string) => void
   handleRegistrationSubmit: (
-    e: FormEvent,
-    postalCode: string,
-    prefecture: string,
-    city: string,
-    street: string,
-    building: string,
-    applicationDate: string
+    formData: FormData
   ) => void
   handleLoginSubmit: (e: FormEvent) => void
   handleForgotPasswordSubmit: (e: FormEvent) => void
@@ -222,8 +216,32 @@ export function HomeSection({
     }
   }
 
-  const onSubmit = (e: FormEvent) => {
-    handleRegistrationSubmit(e, postalCode, prefecture, city, street, building, applicationDate)
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    // FormDataオブジェクトを作成
+    const formData = new FormData();
+    formData.append('agree', agree.toString());
+    formData.append('applicationDate', applicationDate);
+    formData.append('postalCode', postalCode);
+    formData.append('prefecture', prefecture);
+    formData.append('city', city);
+    formData.append('street', street);
+    formData.append('building', building);
+    formData.append('fullName', fullName);
+    formData.append('email', email);
+    formData.append('phoneNumber', phoneNumber);
+    formData.append('imabariResidency', selectedImabariResidency);
+    formData.append('dogName', dogName);
+    formData.append('dogBreed', dogBreed);
+    formData.append('dogWeight', dogWeight);
+    formData.append('password', password);
+    if (vaccinationCertificateFile) {
+      formData.append('vaccine_certificate', vaccinationCertificateFile);
+    }
+
+    // 親コンポーネントの送信ハンドラを呼び出す
+    handleRegistrationSubmit(formData);
   }
 
   const today = new Date()
@@ -345,17 +363,7 @@ export function HomeSection({
             <div className="space-y-6 mt-6">
               <Card className="border-asics-blue-100">
                 <CardContent className="p-4">
-                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    console.log("Form submit clicked!");
-                    console.log("Values:", { postalCode, prefecture, city, street, building, applicationDate });
-                    try {
-                      handleRegistrationSubmit(e, postalCode, prefecture, city, street, building, applicationDate);
-                    } catch (error: any) {
-                      console.error("Form submission error:", error);
-                      toast.error("フォーム送信でエラーが発生しました: " + (error?.message || "不明なエラー"));
-                    }
-                  }} className="space-y-4">
+                  <form onSubmit={onSubmit} className="space-y-4">
                     {/* 1. 利用規約・確認事項に同意 */}
                     <div className="flex items-center">
                       <input
