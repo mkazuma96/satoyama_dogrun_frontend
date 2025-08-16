@@ -168,8 +168,6 @@ export function HomeSection({
       dogName &&
       dogBreed &&
       dogWeight &&
-      dogAge &&
-      dogGender &&
       vaccinationCertificateFile &&
       password &&
       confirmPassword &&
@@ -189,8 +187,6 @@ export function HomeSection({
     dogName,
     dogBreed,
     dogWeight,
-    dogAge,
-    dogGender,
     vaccinationCertificateFile,
     password,
     confirmPassword,
@@ -224,6 +220,7 @@ export function HomeSection({
 
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("フォーム送信開始");
     
     // FormDataオブジェクトを作成
     const formData = new FormData();
@@ -253,6 +250,7 @@ export function HomeSection({
     }
 
     // 親コンポーネントの送信ハンドラを呼び出す
+    console.log("handleRegistrationSubmit呼び出し開始", formData);
     handleRegistrationSubmit(formData);
   }
 
@@ -622,7 +620,7 @@ export function HomeSection({
                       <Label htmlFor="dogGender" className="block text-sm font-caption font-medium text-gray-700">
                         ワンちゃんの性別
                       </Label>
-                      <Select onValueChange={setDogGender} value={dogGender} required>
+                      <Select onValueChange={setDogGender} value={dogGender}>
                         <SelectTrigger
                           id="dogGender"
                           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 [&>svg]:!hidden justify-start"
@@ -640,7 +638,7 @@ export function HomeSection({
                       <Label htmlFor="dogAge" className="block text-sm font-caption font-medium text-gray-700">
                         ワンちゃんが生まれた年
                       </Label>
-                      <Select onValueChange={(value) => setDogAge(parseInt(value))} value={dogAge?.toString()} required>
+                      <Select onValueChange={(value) => setDogAge(parseInt(value))} value={dogAge?.toString()}>
                         <SelectTrigger
                           id="dogAge"
                           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 [&>svg]:!hidden justify-start"
