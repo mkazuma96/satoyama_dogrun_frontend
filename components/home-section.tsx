@@ -149,6 +149,52 @@ export function HomeSection({
   const [dogName, setDogName] = useState("")
   const [dogBreed, setDogBreed] = useState("")
   const [dogWeight, setDogWeight] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [agree, setAgree] = useState(false)
+  const [fullName, setFullName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
+
+  const isFormValid = useMemo(() => {
+    return (
+      agree &&
+      applicationDate &&
+      postalCode &&
+      prefecture &&
+      city &&
+      street &&
+      fullName &&
+      email &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
+      phoneNumber &&
+      selectedImabariResidency &&
+      dogName &&
+      dogBreed &&
+      dogWeight &&
+      vaccinationCertificateFile &&
+      password &&
+      confirmPassword &&
+      password === confirmPassword
+    )
+  }, [
+    agree,
+    applicationDate,
+    postalCode,
+    prefecture,
+    city,
+    street,
+    fullName,
+    email,
+    phoneNumber,
+    selectedImabariResidency,
+    dogName,
+    dogBreed,
+    dogWeight,
+    vaccinationCertificateFile,
+    password,
+    confirmPassword,
+  ])
 
   const handlePostalCodeChange = async (e: React.FocusEvent<HTMLInputElement>) => {
     const code = e.target.value.replace(/-/g, "") // ハイフンを削除
@@ -318,6 +364,8 @@ export function HomeSection({
                         type="checkbox"
                         className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                         required
+                        checked={agree}
+                        onChange={(e) => setAgree(e.target.checked)}
                       />
                       <label htmlFor="agree" className="ml-2 block text-sm text-gray-900 font-caption">
                         利用規約・確認事項を読み、
@@ -442,6 +490,8 @@ export function HomeSection({
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="田中 太郎"
                         required
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
                       />
                     </div>
                     {/* 5. Emailアドレス(連絡先) */}
@@ -456,6 +506,8 @@ export function HomeSection({
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="your@example.com"
                         required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                       />
                     </div>
                     {/* 6. 携帯電話番号(緊急時連絡先) */}
@@ -470,6 +522,8 @@ export function HomeSection({
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         placeholder="090-1234-5678"
                         required
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
                       />
                     </div>
                     {/* 7. 今治市在住の有無 */}
@@ -592,6 +646,8 @@ export function HomeSection({
                         name="password"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                       />
                     </div>
                     <div>
@@ -604,12 +660,18 @@ export function HomeSection({
                         name="confirmPassword"
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
                       />
+                      {password !== confirmPassword && confirmPassword && (
+                        <p className="text-red-500 text-xs mt-1">パスワードが一致しません。</p>
+                      )}
                     </div>
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="w-full font-caption"
                       onClick={() => console.log("Button clicked directly!")}
+                      disabled={!isFormValid}
                     >
                       利用申請
                     </Button>
