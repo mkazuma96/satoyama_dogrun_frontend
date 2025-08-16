@@ -241,8 +241,12 @@ export function HomeSection({
     formData.append('dogName', dogName);
     formData.append('dogBreed', dogBreed);
     formData.append('dogWeight', dogWeight);
-    formData.append('dogAge', dogAge ? dogAge.toString() : '');
-    formData.append('dogGender', dogGender);
+    if (dogAge) {
+      formData.append('dogAge', dogAge.toString());
+    }
+    if (dogGender) {
+      formData.append('dogGender', dogGender);
+    }
     formData.append('password', password);
     if (vaccinationCertificateFile) {
       formData.append('vaccine_certificate', vaccinationCertificateFile);
