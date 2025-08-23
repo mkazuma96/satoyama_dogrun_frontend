@@ -169,26 +169,31 @@ export const apiClient = {
     try {
       const formData = new FormData();
       
-      // 基本情報
-      formData.append('full_name', data.full_name);
+      // 基本情報（バックエンドスキーマに合わせて修正）
+      const nameParts = data.full_name ? data.full_name.split(' ') : ['', ''];
+      formData.append('first_name', nameParts[0] || '');
+      formData.append('last_name', nameParts[1] || '');
       formData.append('email', data.email);
       formData.append('phone_number', data.phone_number);
-      formData.append('postal_code', data.postal_code);
+      formData.append('postal_code', data.postal_code || '');
       formData.append('prefecture', data.prefecture);
       formData.append('city', data.city);
-      formData.append('street', data.street);
-      formData.append('building', data.building);
-      formData.append('imabari_residency', data.imabari_residency);
+      
+      // 住所を統合（address フィールド）
+      const address = [data.street, data.building].filter(Boolean).join(' ');
+      formData.append('address', address);
       formData.append('password', data.password);
       
-      // 犬情報
+      // 犬情報（必須フィールドを追加）
       formData.append('dog_name', data.dog_name);
-      formData.append('dog_breed', data.dog_breed);
-      formData.append('dog_weight', data.dog_weight.toString());
+      formData.append('dog_breed', data.dog_breed || '');
+      formData.append('dog_weight', data.dog_weight ? data.dog_weight.toString() : '');
+      formData.append('dog_age', data.dog_age ? data.dog_age.toString() : '1');
+      formData.append('dog_gender', data.dog_gender || 'オス');
       
       // ファイル（ワクチン証明書）
       if (data.vaccination_certificate) {
-        formData.append('vaccination_certificate', data.vaccination_certificate);
+        formData.append('vaccine_certificate', data.vaccination_certificate);
       }
       
       const response = await api.post('/auth/apply', formData, {
