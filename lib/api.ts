@@ -143,7 +143,7 @@ export const apiClient = {
   // 認証関連
   login: async (data: LoginRequest): Promise<ApiResponse<{ access_token: string; token_type: string }>> => {
     try {
-      const response = await api.post('/auth/login', data);
+      const response = await api.post('/admin/auth/login', data);
       const { access_token } = response.data;
       localStorage.setItem('access_token', access_token);
       return response.data;
