@@ -12,7 +12,7 @@ import { Shield } from "lucide-react"
 export default function AdminLogin() {
   // 開発環境用のデフォルト値を設定
   const [email, setEmail] = useState("admin@satoyama-dogrun.com")
-  const [password, setPassword] = useState("admin123")
+  const [password, setPassword] = useState("admin2025!")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
@@ -63,7 +63,7 @@ export default function AdminLogin() {
         },
         body: JSON.stringify({ 
           email: "admin@satoyama-dogrun.com", 
-          password: "admin123" 
+          password: "admin2025!" 
         }),
       })
 
@@ -162,7 +162,7 @@ export default function AdminLogin() {
             </p>
             <div className="text-sm text-yellow-700 space-y-1">
               <p>メールアドレス: admin@satoyama-dogrun.com</p>
-              <p>パスワード: admin123</p>
+              <p>パスワード: admin2025!</p>
             </div>
             <p className="text-xs text-yellow-600 mt-2">
               ※ 上記のボタンをクリックすると、自動的にデモアカウントでログインします
