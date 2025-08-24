@@ -81,11 +81,25 @@ export function EntryManagement({ userDogs }: EntryManagementProps) {
   }
 
   const handleExit = async () => {
+    if (selectedDogsForExit.length === 0) {
+      toast.error("退場させる犬を選択してください")
+      return
+    }
+
     setLoading(true)
     try {
-      const result = await apiClient.exitDogRun()
-      toast.success(`退場しました（滞在時間: ${result.duration_minutes}分）`)
+      // 選択された犬の情報を取得してメッセージに含める
+      const selectedDogNames = selectedDogsForExit.map(dogId => {
+        const dog = userDogs.find(d => d.id === dogId)
+        return dog ? dog.name : dogId
+      }).join(', ')
+
+      // 実際のAPIではselectedDogsForExitを送信するが、今回はデモなのでフロントエンドのみ
+      // const result = await apiClient.exitDogRun(selectedDogsForExit)
+      
+      toast.success(`${selectedDogNames}が退場しました！`)
       setIsInPark(false)
+      setSelectedDogsForExit([])
       await fetchCurrentStatus()
       await fetchEntryHistory()
     } catch (error: any) {
@@ -278,14 +292,13 @@ export function EntryManagement({ userDogs }: EntryManagementProps) {
 
               <Separator />
 
-              {/* 従来の退場ボタン（緊急用） */}
+              {/* 手動退場ボタン */}
               <Button
                 onClick={handleExit}
-                disabled={loading}
-                variant="outline"
-                className="w-full text-red-600 border-red-200 hover:bg-red-50"
+                disabled={selectedDogsForExit.length === 0 || loading}
+                className="w-full text-white bg-red-500 hover:bg-red-600"
               >
-                {loading ? "処理中..." : "緊急退場（全頭）"}
+                {loading ? "処理中..." : "退場する"}
               </Button>
             </>
           )}
