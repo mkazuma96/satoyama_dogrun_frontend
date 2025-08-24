@@ -23,6 +23,8 @@ export function EntryManagement({ userDogs }: EntryManagementProps) {
   const [currentVisitors, setCurrentVisitors] = useState<any>()
   const [entryHistory, setEntryHistory] = useState<any[]>([])
   const [showQRScanner, setShowQRScanner] = useState(false)
+  const [showExitQRScanner, setShowExitQRScanner] = useState(false)
+  const [selectedDogsForExit, setSelectedDogsForExit] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
 
@@ -102,12 +104,32 @@ export function EntryManagement({ userDogs }: EntryManagementProps) {
     )
   }
 
+  const toggleExitDogSelection = (dogId: string) => {
+    setSelectedDogsForExit(prev => 
+      prev.includes(dogId) 
+        ? prev.filter(id => id !== dogId)
+        : [...prev, dogId]
+    )
+  }
+
   const handleQRScanSuccess = async () => {
     // 入場状態に変更
     setIsInPark(true)
     
     // 選択された犬をリセット
     setSelectedDogs([])
+    
+    // 現在の状態と履歴を更新
+    await fetchCurrentStatus()
+    await fetchEntryHistory()
+  }
+
+  const handleExitQRScanSuccess = async () => {
+    // 退場状態に変更
+    setIsInPark(false)
+    
+    // 選択された犬をリセット
+    setSelectedDogsForExit([])
     
     // 現在の状態と履歴を更新
     await fetchCurrentStatus()
@@ -195,18 +217,75 @@ export function EntryManagement({ userDogs }: EntryManagementProps) {
             </>
           ) : (
             <>
-              <div className="text-center py-4">
+              <div className="text-center py-4 mb-4">
                 <p className="text-lg mb-2">ドッグランをお楽しみください！</p>
-                <p className="text-sm text-gray-600">退場時は下のボタンを押してください</p>
+                <p className="text-sm text-gray-600">退場時はQRコードを読み取ってください</p>
               </div>
+
+              {/* 退場用QRコード読み取りボタン */}
+              <Button
+                onClick={() => setShowExitQRScanner(true)}
+                variant="outline"
+                className="w-full"
+                disabled={selectedDogsForExit.length === 0 || loading}
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                QRコードを読み取って退場
+              </Button>
               
-              {/* 退場ボタン */}
+              {/* 退場する犬の選択状態メッセージ */}
+              {selectedDogsForExit.length === 0 ? (
+                <div className="text-center py-2">
+                  <p className="text-xs text-orange-600 bg-orange-50 px-3 py-2 rounded-lg">
+                    ⚠️ 退場する犬を選択してください
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-2">
+                  <p className="text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+                    ✅ {selectedDogsForExit.length}頭の犬が選択されています
+                  </p>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* 退場する犬の選択 */}
+              <div>
+                <p className="text-sm font-medium mb-3">退場する犬を選択</p>
+                {userDogs.length > 0 ? (
+                  <div className="space-y-2">
+                    {userDogs.map((dog) => (
+                      <div key={dog.id} className="flex items-center space-x-3 p-2 rounded hover:bg-gray-50">
+                        <Checkbox 
+                          checked={selectedDogsForExit.includes(dog.id)}
+                          onCheckedChange={() => toggleExitDogSelection(dog.id)}
+                          disabled={loading}
+                        />
+                        <Dog className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm">{dog.name}</span>
+                        {dog.breed && <span className="text-xs text-gray-500">({dog.breed})</span>}
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          入場中
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">入場中の犬がいません</p>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* 従来の退場ボタン（緊急用） */}
               <Button
                 onClick={handleExit}
                 disabled={loading}
-                className="w-full text-white bg-red-500 hover:bg-red-600"
+                variant="outline"
+                className="w-full text-red-600 border-red-200 hover:bg-red-50"
               >
-                {loading ? "処理中..." : "退場する"}
+                {loading ? "処理中..." : "緊急退場（全頭）"}
               </Button>
             </>
           )}
@@ -296,12 +375,21 @@ export function EntryManagement({ userDogs }: EntryManagementProps) {
         )}
       </Card>
 
-      {/* QRコードスキャナーモーダル */}
+      {/* 入場用QRコードスキャナーモーダル */}
       <QRScannerSimple
         isOpen={showQRScanner}
         onClose={() => setShowQRScanner(false)}
         onScanSuccess={handleQRScanSuccess}
         selectedDogs={selectedDogs}
+      />
+
+      {/* 退場用QRコードスキャナーモーダル */}
+      <QRScannerSimple
+        isOpen={showExitQRScanner}
+        onClose={() => setShowExitQRScanner(false)}
+        onScanSuccess={handleExitQRScanSuccess}
+        selectedDogs={selectedDogsForExit}
+        mode="exit"
       />
     </div>
   )

@@ -11,9 +11,10 @@ interface QRScannerSimpleProps {
   onClose: () => void
   onScanSuccess?: () => void
   selectedDogs?: string[]
+  mode?: 'entry' | 'exit'
 }
 
-export function QRScannerSimple({ isOpen, onClose, onScanSuccess, selectedDogs = [] }: QRScannerSimpleProps) {
+export function QRScannerSimple({ isOpen, onClose, onScanSuccess, selectedDogs = [], mode = 'entry' }: QRScannerSimpleProps) {
   const [cameraActive, setCameraActive] = useState(false)
   const [cameraError, setCameraError] = useState<string>("")
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -82,12 +83,17 @@ export function QRScannerSimple({ isOpen, onClose, onScanSuccess, selectedDogs =
   // QRコード読み取り成功をシミュレート
   const simulateQRSuccess = async () => {
     try {
-      // 成功メッセージを表示
-      toast.success("QRコード読み取り成功！入場処理を開始します...")
+      const actionText = mode === 'entry' ? '入場' : '退場'
+      const successMessage = mode === 'entry' 
+        ? "入場しました！ドッグランをお楽しみください🐕"
+        : "退場しました！お疲れさまでした👋"
       
-      // 少し待ってから入場完了メッセージ
+      // 成功メッセージを表示
+      toast.success(`QRコード読み取り成功！${actionText}処理を開始します...`)
+      
+      // 少し待ってから完了メッセージ
       setTimeout(() => {
-        toast.success("入場しました！ドッグランをお楽しみください🐕")
+        toast.success(successMessage)
         
         // 成功コールバックを実行
         if (onScanSuccess) {
@@ -99,7 +105,8 @@ export function QRScannerSimple({ isOpen, onClose, onScanSuccess, selectedDogs =
       }, 1500)
       
     } catch (error) {
-      toast.error("入場処理に失敗しました")
+      const actionText = mode === 'entry' ? '入場' : '退場'
+      toast.error(`${actionText}処理に失敗しました`)
     }
   }
 
@@ -109,7 +116,7 @@ export function QRScannerSimple({ isOpen, onClose, onScanSuccess, selectedDogs =
         <DialogHeader>
           <DialogTitle className="text-lg font-heading flex items-center" style={{ color: "rgb(0, 8, 148)" }}>
             <Camera className="h-5 w-5 mr-2" />
-            QRコードスキャナー
+            {mode === 'entry' ? '入場用' : '退場用'}QRコードスキャナー
           </DialogTitle>
           <button
             onClick={handleClose}
@@ -194,7 +201,7 @@ export function QRScannerSimple({ isOpen, onClose, onScanSuccess, selectedDogs =
                 style={{ backgroundColor: "rgb(0, 8, 148)" }}
               >
                 <Camera className="h-4 w-4 mr-2" />
-                QRコードを読み取る（デモ）
+                QRコードを読み取る（{mode === 'entry' ? '入場' : '退場'}デモ）
               </Button>
             )}
             
