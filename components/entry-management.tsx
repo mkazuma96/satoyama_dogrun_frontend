@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { QrCode, LogIn, LogOut, Users, Dog, Clock, History } from "lucide-react"
+import { LogIn, LogOut, Users, Dog, Clock, History, Camera } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,7 +11,7 @@ import { toast } from "sonner"
 import { format } from "date-fns"
 import { ja } from "date-fns/locale"
 import { apiClient } from "@/lib/api"
-import { QRCodeDisplay } from "@/components/qr-code-display"
+import { QRScannerSimple } from "@/components/qr-scanner-simple"
 
 interface EntryManagementProps {
   userDogs: any[]
@@ -22,7 +22,7 @@ export function EntryManagement({ userDogs }: EntryManagementProps) {
   const [selectedDogs, setSelectedDogs] = useState<string[]>([])
   const [currentVisitors, setCurrentVisitors] = useState<any>()
   const [entryHistory, setEntryHistory] = useState<any[]>([])
-  const [showQRCode, setShowQRCode] = useState(false)
+  const [showQRScanner, setShowQRScanner] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
 
@@ -102,6 +102,18 @@ export function EntryManagement({ userDogs }: EntryManagementProps) {
     )
   }
 
+  const handleQRScanSuccess = async () => {
+    // 入場状態に変更
+    setIsInPark(true)
+    
+    // 選択された犬をリセット
+    setSelectedDogs([])
+    
+    // 現在の状態と履歴を更新
+    await fetchCurrentStatus()
+    await fetchEntryHistory()
+  }
+
   return (
     <div className="space-y-6">
       {/* 現在の状態 */}
@@ -120,15 +132,31 @@ export function EntryManagement({ userDogs }: EntryManagementProps) {
         <CardContent className="space-y-4">
           {!isInPark ? (
             <>
-              {/* QRコード表示ボタン */}
+              {/* QRコード読み取りボタン */}
               <Button
-                onClick={() => setShowQRCode(true)}
+                onClick={() => setShowQRScanner(true)}
                 variant="outline"
                 className="w-full"
+                disabled={selectedDogs.length === 0 || loading}
               >
-                <QrCode className="h-4 w-4 mr-2" />
-                QRコードを表示
+                <Camera className="h-4 w-4 mr-2" />
+                QRコードを読み取る
               </Button>
+              
+              {/* 犬選択状態のメッセージ */}
+              {selectedDogs.length === 0 ? (
+                <div className="text-center py-2">
+                  <p className="text-xs text-orange-600 bg-orange-50 px-3 py-2 rounded-lg">
+                    ⚠️ 入場する犬を選択してください
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-2">
+                  <p className="text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+                    ✅ {selectedDogs.length}頭の犬が選択されています
+                  </p>
+                </div>
+              )}
 
               <Separator />
 
@@ -268,10 +296,12 @@ export function EntryManagement({ userDogs }: EntryManagementProps) {
         )}
       </Card>
 
-      {/* QRコード表示モーダル */}
-      <QRCodeDisplay
-        isOpen={showQRCode}
-        onClose={() => setShowQRCode(false)}
+      {/* QRコードスキャナーモーダル */}
+      <QRScannerSimple
+        isOpen={showQRScanner}
+        onClose={() => setShowQRScanner(false)}
+        onScanSuccess={handleQRScanSuccess}
+        selectedDogs={selectedDogs}
       />
     </div>
   )

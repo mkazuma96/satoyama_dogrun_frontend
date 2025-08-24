@@ -541,9 +541,9 @@ export const apiClient = {
   },
 
   // 入場関連
-  generateQRCode: async (): Promise<any> => {
+  generateQRCode: async (dogIds: string[]): Promise<any> => {
     try {
-      const response = await api.get('/entry/qrcode');
+      const response = await api.post('/entry/qrcode', { dog_ids: dogIds });
       return response.data;
     } catch (error) {
       throw error;

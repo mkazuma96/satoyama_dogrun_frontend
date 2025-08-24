@@ -11,9 +11,10 @@ import { apiClient } from "@/lib/api"
 interface QRCodeDisplayProps {
   isOpen: boolean
   onClose: () => void
+  selectedDogs?: string[]
 }
 
-export function QRCodeDisplay({ isOpen, onClose }: QRCodeDisplayProps) {
+export function QRCodeDisplay({ isOpen, onClose, selectedDogs = [] }: QRCodeDisplayProps) {
   const [qrCode, setQrCode] = useState<string>("")
   const [loading, setLoading] = useState(false)
   const [expiresAt, setExpiresAt] = useState<Date | null>(null)
@@ -45,7 +46,7 @@ export function QRCodeDisplay({ isOpen, onClose }: QRCodeDisplayProps) {
   const generateQRCode = async () => {
     setLoading(true)
     try {
-      const data = await apiClient.generateQRCode()
+      const data = await apiClient.generateQRCode(selectedDogs)
       setQrCode(data.qr_code)
       setExpiresAt(new Date(data.expires_at))
     } catch (error) {
