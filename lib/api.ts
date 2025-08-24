@@ -29,8 +29,17 @@ const createApiInstance = (): AxiosInstance => {
   // リクエストインターセプター
   instance.interceptors.request.use(
     (config) => {
-      // トークンの自動追加
-      const token = localStorage.getItem('access_token');
+      // トークンの自動追加（管理者API優先）
+      let token = null;
+      
+      // 管理者APIの場合は admin_access_token を使用
+      if (config.url?.includes('/admin/')) {
+        token = localStorage.getItem('admin_access_token');
+      } else {
+        // 一般APIの場合は access_token を使用
+        token = localStorage.getItem('access_token');
+      }
+      
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
