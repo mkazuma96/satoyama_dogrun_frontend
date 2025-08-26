@@ -305,47 +305,6 @@ export function EntryManagement({ userDogs }: EntryManagementProps) {
         </CardContent>
       </Card>
 
-      {/* 現在の在場者 */}
-      {currentVisitors && (
-        <Card className="border-asics-blue-100">
-          <CardHeader>
-            <CardTitle className="text-base font-heading flex items-center" style={{ color: "rgb(0, 8, 148)" }}>
-              <Users className="h-5 w-5 mr-2" />
-              現在の在場者
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-1 text-gray-500" />
-                  <span className="text-sm font-medium">{currentVisitors.total_visitors}名</span>
-                </div>
-                <div className="flex items-center">
-                  <Dog className="h-4 w-4 mr-1 text-gray-500" />
-                  <span className="text-sm font-medium">{currentVisitors.total_dogs}頭</span>
-                </div>
-              </div>
-            </div>
-            
-            {currentVisitors.visitors.length > 0 ? (
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {currentVisitors.visitors.map((visitor: any) => (
-                  <div key={visitor.entry_id} className="flex items-center justify-between text-sm py-1">
-                    <span>{visitor.user_name}</span>
-                    <span className="text-xs text-gray-500">
-                      {format(new Date(visitor.entry_time), "HH:mm", { locale: ja })}〜
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">現在利用者はいません</p>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       {/* 利用履歴 */}
       <Card className="border-asics-blue-100">
         <CardHeader>
