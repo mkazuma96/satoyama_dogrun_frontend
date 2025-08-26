@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // output: 'standalone', // 一時的に無効化
+  output: 'standalone', // デプロイ最適化のために有効化
   eslint: {
     ignoreDuringBuilds: true,
   },
